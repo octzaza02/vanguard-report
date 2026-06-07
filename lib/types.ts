@@ -37,4 +37,5 @@ export type Session = {
   token: string
   userId: string
   name: string
+  isAdmin: boolean
 }

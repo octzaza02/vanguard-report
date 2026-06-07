@@ -11,7 +11,9 @@ export function loadSession(): Session | null {
     const raw = window.localStorage.getItem(STORAGE_KEY)
     if (!raw) return null
     const parsed = JSON.parse(raw)
-    if (parsed?.token && parsed?.userId && parsed?.name) return parsed as Session
+    if (parsed?.token && parsed?.userId && parsed?.name) {
+      return { token: parsed.token, userId: parsed.userId, name: parsed.name, isAdmin: !!parsed.isAdmin }
+    }
     return null
   } catch {
     return null

@@ -12,11 +12,18 @@ export async function login(name: string, pin: string): Promise<Session> {
   const { data, error } = await supabase.rpc('auth_login', { p_name: name, p_pin: pin })
   if (error) throw new Error(error.message)
   const row = Array.isArray(data) ? data[0] : data
-  return { token: row.token, userId: row.user_id, name: row.name }
+  return { token: row.token, userId: row.user_id, name: row.name, isAdmin: !!row.is_admin }
 }
 
 export async function logout(token: string): Promise<void> {
   await supabase.rpc('auth_logout', { p_token: token })
+}
+
+// --- Admin only (server-side enforced via RPC) ---
+
+export async function adminDeleteUser(token: string, targetUserId: string): Promise<void> {
+  const { error } = await supabase.rpc('admin_delete_user', { p_token: token, p_target_user_id: targetUserId })
+  if (error) throw new Error(error.message)
 }
 
 export async function updateAvatar(token: string, avatar: string | null): Promise<User> {
