@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "comp-stats-dev",
+      "runtimeExecutable": "/bin/bash",
+      "runtimeArgs": ["/Users/octkongin/vanguard report/.claude/run-dev.sh"],
+      "port": 3000
+    }
+  ]
+}
