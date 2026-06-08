@@ -94,28 +94,28 @@ export default function HomePage() {
                   </div>
                 </Link>
 
-                <div className="mt-3 border-t border-amber-100 pt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+                <div className="mt-3 border-t border-amber-100 pt-3 flex flex-wrap items-center gap-2">
                   <Link
                     href={`/u/${encodeURIComponent(u.name)}`}
-                    className="text-xs text-amber-700 hover:underline"
+                    className="text-xs font-medium text-amber-700 border border-amber-300 rounded-full px-3 py-1 hover:bg-amber-50 hover:border-amber-400 transition"
                   >
-                    📁 ไปที่โฟลเดอร์
+                    ไปที่โฟลเดอร์
                   </Link>
                   {showCardButton && (
                     <button
                       onClick={() => setCardUser(u)}
-                      className="text-xs text-amber-700 hover:underline"
+                      className="text-xs font-medium text-amber-700 border border-amber-300 rounded-full px-3 py-1 hover:bg-amber-50 hover:border-amber-400 transition"
                     >
-                      🪪 {card ? 'นามบัตรแนะนำตัว' : '+ สร้างนามบัตรแนะนำตัว'}
+                      {card ? 'นามบัตรแนะนำตัว' : '+ สร้างนามบัตรแนะนำตัว'}
                     </button>
                   )}
                   {session?.isAdmin && !isOwner && (
                     <button
                       onClick={() => handleDeleteUser(u)}
                       disabled={deletingId === u.id}
-                      className="text-xs text-red-600 hover:underline disabled:opacity-50"
+                      className="text-xs font-medium text-red-600 border border-red-200 rounded-full px-3 py-1 hover:bg-red-50 hover:border-red-300 transition disabled:opacity-50"
                     >
-                      {deletingId === u.id ? 'กำลังลบ...' : '🗑 ลบบัญชีนี้ (แอดมิน)'}
+                      {deletingId === u.id ? 'กำลังลบ...' : 'ลบบัญชีนี้ (แอดมิน)'}
                     </button>
                   )}
                 </div>
