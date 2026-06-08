@@ -33,6 +33,21 @@ export type Match = {
   created_at: string
 }
 
+export type ProfileLink = {
+  label: string
+  url: string
+}
+
+export type ProfileCard = {
+  id: string
+  user_id: string
+  tagline: string | null
+  links: ProfileLink[]
+  extra: Record<string, string>
+  updated_at: string
+  created_at: string
+}
+
 export type Session = {
   token: string
   userId: string

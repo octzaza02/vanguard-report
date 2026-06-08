@@ -2,26 +2,40 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
-import { listUsers, adminDeleteUser } from '@/lib/api'
-import type { User } from '@/lib/types'
+import { listUsers, listProfileCards, adminDeleteUser, upsertProfileCard } from '@/lib/api'
+import type { ProfileCard, User } from '@/lib/types'
 import { useSession } from '@/lib/session'
 import FolderIcon from '@/components/FolderIcon'
+import ProfileCardModal from '@/components/ProfileCardModal'
 
 export default function HomePage() {
   const [users, setUsers] = useState<User[] | null>(null)
+  const [cards, setCards] = useState<Record<string, ProfileCard>>({})
   const [error, setError] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [cardUser, setCardUser] = useState<User | null>(null)
   const { session } = useSession()
 
   const reload = useCallback(() => {
     listUsers()
       .then(setUsers)
       .catch((err) => setError(err instanceof Error ? err.message : 'โหลดข้อมูลไม่สำเร็จ'))
+    listProfileCards()
+      .then((list) => setCards(Object.fromEntries(list.map((c) => [c.user_id, c]))))
+      .catch(() => {
+        /* profile cards are optional — ignore load errors silently */
+      })
   }, [])
 
   useEffect(() => {
     reload()
   }, [reload])
+
+  async function handleSaveProfileCard(input: Parameters<typeof upsertProfileCard>[1]) {
+    if (!session) return
+    const saved = await upsertProfileCard(session.token, input)
+    setCards((c) => ({ ...c, [saved.user_id]: saved }))
+  }
 
   async function handleDeleteUser(u: User) {
     if (!session) return
@@ -63,32 +77,62 @@ export default function HomePage() {
 
       {users && users.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          {users.map((u) => (
-            <div
-              key={u.id}
-              className="group rounded-xl border border-amber-200 bg-white p-5 shadow-sm hover:shadow-md hover:border-amber-400 transition"
-            >
-              <Link href={`/u/${encodeURIComponent(u.name)}`} className="flex items-center gap-3">
-                <FolderIcon avatar={u.avatar} size={40} className="group-hover:bg-amber-100 transition" />
-                <div>
-                  <p className="font-medium text-amber-950">{u.name}</p>
-                  {session?.name === u.name && <p className="text-xs text-amber-600">โฟลเดอร์ของฉัน</p>}
-                </div>
-              </Link>
-              {session?.isAdmin && session.name !== u.name && (
-                <div className="mt-3 border-t border-amber-100 pt-2">
-                  <button
-                    onClick={() => handleDeleteUser(u)}
-                    disabled={deletingId === u.id}
-                    className="text-xs text-red-600 hover:underline disabled:opacity-50"
+          {users.map((u) => {
+            const isOwner = session?.name === u.name
+            const card = cards[u.id] ?? null
+            const showCardButton = isOwner || card !== null
+            return (
+              <div
+                key={u.id}
+                className="group rounded-xl border border-amber-200 bg-white p-5 shadow-sm hover:shadow-md hover:border-amber-400 transition"
+              >
+                <Link href={`/u/${encodeURIComponent(u.name)}`} className="flex items-center gap-3">
+                  <FolderIcon avatar={u.avatar} size={40} className="group-hover:bg-amber-100 transition" />
+                  <div>
+                    <p className="font-medium text-amber-950">{u.name}</p>
+                    {isOwner && <p className="text-xs text-amber-600">โฟลเดอร์ของฉัน</p>}
+                  </div>
+                </Link>
+
+                <div className="mt-3 border-t border-amber-100 pt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <Link
+                    href={`/u/${encodeURIComponent(u.name)}`}
+                    className="text-xs text-amber-700 hover:underline"
                   >
-                    {deletingId === u.id ? 'กำลังลบ...' : '🗑 ลบบัญชีนี้ (แอดมิน)'}
-                  </button>
+                    📁 ไปที่โฟลเดอร์
+                  </Link>
+                  {showCardButton && (
+                    <button
+                      onClick={() => setCardUser(u)}
+                      className="text-xs text-amber-700 hover:underline"
+                    >
+                      🪪 {card ? 'นามบัตรแนะนำตัว' : '+ สร้างนามบัตรแนะนำตัว'}
+                    </button>
+                  )}
+                  {session?.isAdmin && !isOwner && (
+                    <button
+                      onClick={() => handleDeleteUser(u)}
+                      disabled={deletingId === u.id}
+                      className="text-xs text-red-600 hover:underline disabled:opacity-50"
+                    >
+                      {deletingId === u.id ? 'กำลังลบ...' : '🗑 ลบบัญชีนี้ (แอดมิน)'}
+                    </button>
+                  )}
                 </div>
-              )}
-            </div>
-          ))}
+              </div>
+            )
+          })}
         </div>
+      )}
+
+      {cardUser && (
+        <ProfileCardModal
+          user={cardUser}
+          card={cards[cardUser.id] ?? null}
+          isOwner={session?.name === cardUser.name}
+          onClose={() => setCardUser(null)}
+          onSave={handleSaveProfileCard}
+        />
       )}
     </div>
   )

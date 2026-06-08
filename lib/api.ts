@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import type { Competition, Match, MatchResult, Session, User } from './types'
+import type { Competition, Match, MatchResult, ProfileCard, ProfileLink, Session, User } from './types'
 
 function unwrap<T>({ data, error }: { data: T | null; error: { message: string } | null }): T {
   if (error) throw new Error(error.message)
@@ -40,6 +40,35 @@ export async function listUsers(): Promise<User[]> {
 
 export async function getUser(name: string): Promise<User | null> {
   const { data, error } = await supabase.from('user_directory').select('*').eq('name', name).maybeSingle()
+  if (error) throw new Error(error.message)
+  return data
+}
+
+// --- Profile cards ---
+
+export async function listProfileCards(): Promise<ProfileCard[]> {
+  return unwrap(await supabase.from('profile_cards').select('*'))
+}
+
+export async function getProfileCard(userId: string): Promise<ProfileCard | null> {
+  const { data, error } = await supabase.from('profile_cards').select('*').eq('user_id', userId).maybeSingle()
+  if (error) throw new Error(error.message)
+  return data
+}
+
+export type ProfileCardInput = {
+  tagline: string
+  links: ProfileLink[]
+  extra: Record<string, string>
+}
+
+export async function upsertProfileCard(token: string, fields: ProfileCardInput): Promise<ProfileCard> {
+  const { data, error } = await supabase.rpc('upsert_profile_card', {
+    p_token: token,
+    p_tagline: fields.tagline,
+    p_links: fields.links,
+    p_extra: fields.extra,
+  })
   if (error) throw new Error(error.message)
   return data
 }
