@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
-import { listUsers, listProfileCards, adminDeleteUser, upsertProfileCard } from '@/lib/api'
+import { listUsers, listProfileCards, upsertProfileCard } from '@/lib/api'
 import type { ProfileCard, User } from '@/lib/types'
 import { useSession } from '@/lib/session'
 import FolderIcon from '@/components/FolderIcon'
@@ -12,7 +12,6 @@ export default function HomePage() {
   const [users, setUsers] = useState<User[] | null>(null)
   const [cards, setCards] = useState<Record<string, ProfileCard>>({})
   const [error, setError] = useState<string | null>(null)
-  const [deletingId, setDeletingId] = useState<string | null>(null)
   const [cardUser, setCardUser] = useState<User | null>(null)
   const { session } = useSession()
 
@@ -35,25 +34,6 @@ export default function HomePage() {
     if (!session) return
     const saved = await upsertProfileCard(session.token, input)
     setCards((c) => ({ ...c, [saved.user_id]: saved }))
-  }
-
-  async function handleDeleteUser(u: User) {
-    if (!session) return
-    if (
-      !confirm(
-        `ลบบัญชี "${u.name}" ถาวร?\n\nข้อมูลงานแข่งและแมตช์ทั้งหมดของผู้ใช้นี้จะถูกลบไปด้วย และไม่สามารถกู้คืนได้`
-      )
-    )
-      return
-    setDeletingId(u.id)
-    try {
-      await adminDeleteUser(session.token, u.id)
-      reload()
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'ลบไม่สำเร็จ')
-    } finally {
-      setDeletingId(null)
-    }
   }
 
   return (
@@ -107,15 +87,6 @@ export default function HomePage() {
                       className="text-xs font-medium text-amber-700 border border-amber-300 rounded-full px-3 py-1 hover:bg-amber-50 hover:border-amber-400 transition"
                     >
                       {card ? 'นามบัตรแนะนำตัว' : '+ สร้างนามบัตรแนะนำตัว'}
-                    </button>
-                  )}
-                  {session?.isAdmin && !isOwner && (
-                    <button
-                      onClick={() => handleDeleteUser(u)}
-                      disabled={deletingId === u.id}
-                      className="text-xs font-medium text-red-600 border border-red-200 rounded-full px-3 py-1 hover:bg-red-50 hover:border-red-300 transition disabled:opacity-50"
-                    >
-                      {deletingId === u.id ? 'กำลังลบ...' : 'ลบบัญชีนี้ (แอดมิน)'}
                     </button>
                   )}
                 </div>

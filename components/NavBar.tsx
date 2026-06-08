@@ -1,13 +1,16 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useSession, clearSession } from '@/lib/session'
 import { logout } from '@/lib/api'
+import AdminManageUsersModal from './AdminManageUsersModal'
 
 export default function NavBar() {
   const { session, ready } = useSession()
   const router = useRouter()
+  const [showManageUsers, setShowManageUsers] = useState(false)
 
   async function handleLogout() {
     if (session) await logout(session.token).catch(() => {})
@@ -34,6 +37,14 @@ export default function NavBar() {
                 >
                   โฟลเดอร์ของฉัน
                 </Link>
+                {session.isAdmin && (
+                  <button
+                    onClick={() => setShowManageUsers(true)}
+                    className="px-3 py-1.5 rounded-md bg-amber-50 hover:bg-amber-100 transition"
+                  >
+                    จัดการผู้ใช้งาน
+                  </button>
+                )}
                 <button
                   onClick={handleLogout}
                   className="px-3 py-1.5 rounded-md bg-amber-600 text-white hover:bg-amber-500 transition"
@@ -52,6 +63,9 @@ export default function NavBar() {
           </nav>
         )}
       </div>
+      {showManageUsers && session && (
+        <AdminManageUsersModal session={session} onClose={() => setShowManageUsers(false)} />
+      )}
     </header>
   )
 }
