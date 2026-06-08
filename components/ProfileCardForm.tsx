@@ -85,13 +85,13 @@ export default function ProfileCardForm({
     <Modal title={initial ? 'แก้ไขนามบัตรแนะนำตัว' : 'สร้างนามบัตรแนะนำตัว'} onClose={onClose}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-amber-900 mb-1">คำโปรย / แนะนำตัวสั้นๆ</label>
+          <label className="block text-sm font-medium text-amber-900 mb-1">แนะนำตัวสั้นๆ</label>
           <textarea
             value={tagline}
             onChange={(e) => setTagline(e.target.value.slice(0, MAX_TAGLINE))}
             rows={3}
             className="w-full rounded-md border border-amber-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500"
-            placeholder="เช่น สายเดี้ยง / เล่นมา 3 ปี / ถนัดเด็คคอนโทรล"
+            placeholder="เช่น เล่นมา 3 ปี / ถนัดเด็คคอนโทรล"
           />
           <p className="text-xs text-amber-500 mt-1 text-right">{tagline.length}/{MAX_TAGLINE}</p>
         </div>
