@@ -108,7 +108,7 @@ export default function MatchTable({
                   </span>
                 </td>
                 <td className="px-4 py-2 text-amber-900">{m.score || '—'}</td>
-                <td className="px-4 py-2 text-amber-600 max-w-xs truncate" title={m.notes ?? ''}>
+                <td className="px-4 py-2 text-amber-600 max-w-xs whitespace-pre-wrap break-words align-top">
                   {m.notes || '—'}
                 </td>
                 {extraKeys.map((k) => (
