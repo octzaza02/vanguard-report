@@ -75,14 +75,23 @@ export default function CompetitionForm({
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-amber-900 mb-1">ประเภท</label>
-          <input
-            type="text"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="w-full rounded-md border border-amber-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500"
-            placeholder="เช่น swissround, tournament"
-          />
+          <label className="block text-sm font-medium text-amber-900 mb-2">ประเภท</label>
+          <div className="flex flex-wrap gap-2">
+            {['swissround', 'tournament', 'ซ้อม'].map((opt) => (
+              <button
+                key={opt}
+                type="button"
+                onClick={() => setCategory(category === opt ? '' : opt)}
+                className={`px-4 py-1.5 rounded-full text-sm font-medium border transition ${
+                  category === opt
+                    ? 'bg-amber-500 border-amber-500 text-white'
+                    : 'bg-white border-amber-300 text-amber-700 hover:bg-amber-50 hover:border-amber-400'
+                }`}
+              >
+                {opt}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div>

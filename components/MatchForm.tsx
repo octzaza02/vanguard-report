@@ -13,17 +13,25 @@ function todayISO() {
 
 type ExtraField = { key: string; value: string }
 
+const PRACTICE_FIELDS = ['Mulligan', 'Turn Counts', 'Death Cards', 'Cards In', 'Cards Out'] as const
+type PracticeFieldKey = (typeof PRACTICE_FIELDS)[number]
+const PRACTICE_BOX1 = ['Mulligan', 'Turn Counts'] as const
+const PRACTICE_BOX2 = ['Death Cards', 'Cards In', 'Cards Out'] as const
+
 export default function MatchForm({
   initial,
   nextRoundNumber,
+  category,
   onSubmit,
   onClose,
 }: {
   initial?: Match
   nextRoundNumber?: number
+  category?: string
   onSubmit: (input: MatchInput) => Promise<void>
   onClose: () => void
 }) {
+  const isPractice = category === 'ซ้อม'
   const [matchDate, setMatchDate] = useState(initial?.match_date ?? todayISO())
   const [showDatePicker, setShowDatePicker] = useState(Boolean(initial))
   const [roundNumber, setRoundNumber] = useState<string>(
@@ -34,8 +42,15 @@ export default function MatchForm({
   const [result, setResult] = useState<MatchResult>(initial?.result ?? 'win')
   const [score, setScore] = useState(initial?.score ?? '')
   const [notes, setNotes] = useState(initial?.notes ?? '')
+  const [practiceValues, setPracticeValues] = useState<Record<PracticeFieldKey, string>>(
+    () => Object.fromEntries(PRACTICE_FIELDS.map((k) => [k, initial?.extra?.[k] ?? ''])) as Record<PracticeFieldKey, string>
+  )
   const [extraFields, setExtraFields] = useState<ExtraField[]>(
-    initial?.extra ? Object.entries(initial.extra).map(([key, value]) => ({ key, value: String(value) })) : []
+    initial?.extra
+      ? Object.entries(initial.extra)
+          .filter(([key]) => !(PRACTICE_FIELDS as readonly string[]).includes(key))
+          .map(([key, value]) => ({ key, value: String(value) }))
+      : []
   )
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -56,6 +71,11 @@ export default function MatchForm({
     setSaving(true)
     try {
       const extra: Record<string, string> = {}
+      if (isPractice) {
+        for (const k of PRACTICE_FIELDS) {
+          if (practiceValues[k].trim()) extra[k] = practiceValues[k].trim()
+        }
+      }
       for (const f of extraFields) {
         if (f.key.trim()) extra[f.key.trim()] = f.value
       }
@@ -190,6 +210,42 @@ export default function MatchForm({
             placeholder="เช่น 2-1, 13-7"
           />
         </div>
+
+        {isPractice && (
+          <>
+            <div className="rounded-lg border border-amber-200 bg-amber-50/60 px-4 py-3 space-y-3">
+              <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide">ข้อมูลการซ้อม</p>
+              {PRACTICE_BOX1.map((field) => (
+                <div key={field}>
+                  <label className="block text-sm font-medium text-amber-900 mb-1">{field}</label>
+                  <input
+                    type="text"
+                    value={practiceValues[field]}
+                    onChange={(e) => setPracticeValues((v) => ({ ...v, [field]: e.target.value }))}
+                    className="w-full rounded-md border border-amber-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    placeholder={field}
+                  />
+                </div>
+              ))}
+            </div>
+
+            <div className="rounded-lg border border-amber-200 bg-amber-50/60 px-4 py-3 space-y-3">
+              <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide">Decks Change</p>
+              {PRACTICE_BOX2.map((field) => (
+                <div key={field}>
+                  <label className="block text-sm font-medium text-amber-900 mb-1">{field}</label>
+                  <input
+                    type="text"
+                    value={practiceValues[field]}
+                    onChange={(e) => setPracticeValues((v) => ({ ...v, [field]: e.target.value }))}
+                    className="w-full rounded-md border border-amber-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    placeholder={field}
+                  />
+                </div>
+              ))}
+            </div>
+          </>
+        )}
 
         <div>
           <label className="block text-sm font-medium text-amber-900 mb-1">บันทึกส่วนตัว</label>
