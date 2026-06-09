@@ -22,7 +22,7 @@ export default function NavBar() {
     <header className="border-b border-amber-200 bg-white">
       <div className="w-full max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
         <Link href="/" className="font-semibold text-lg tracking-tight">
-          🏆 สถิติการแข่งขัน
+          Player Card Battle Report
         </Link>
         {ready && (
           <nav className="flex items-center gap-3 text-sm">
