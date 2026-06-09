@@ -195,7 +195,7 @@ export default function CompetitionPage({
               ? Math.max(0, ...matches.map((m) => m.round_number ?? 0)) + 1
               : 1
           }
-          category={competition?.category}
+          category={competition?.category ?? undefined}
           onSubmit={handleCreateMatch}
           onClose={() => setShowForm(false)}
         />
@@ -203,7 +203,7 @@ export default function CompetitionPage({
       {editing && (
         <MatchForm
           initial={editing}
-          category={competition?.category}
+          category={competition?.category ?? undefined}
           onSubmit={handleUpdateMatch}
           onClose={() => setEditing(null)}
         />
