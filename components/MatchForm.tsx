@@ -36,7 +36,7 @@ export default function MatchForm({
   onSubmit: (input: MatchInput) => Promise<void>
   onClose: () => void
 }) {
-  const isPractice = category === 'ซ้อม'
+  const isPractice = category === 'Practise'
   const [matchDate, setMatchDate] = useState(initial?.match_date ?? todayISO())
   const [showDatePicker, setShowDatePicker] = useState(Boolean(initial))
   const [roundNumber, setRoundNumber] = useState<string>(
@@ -281,7 +281,7 @@ export default function MatchForm({
         {isPractice && (
           <>
             <div className="rounded-lg border border-amber-200 bg-amber-50/60 px-4 py-3 space-y-3">
-              <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide">ข้อมูลการซ้อม</p>
+              <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide">ข้อมูลการPractise</p>
               {PRACTICE_BOX1.map((field) => (
                 <div key={field}>
                   <label className="block text-sm font-medium text-amber-900 mb-1">{field}</label>

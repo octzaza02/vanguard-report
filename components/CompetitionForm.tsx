@@ -77,7 +77,7 @@ export default function CompetitionForm({
         <div>
           <label className="block text-sm font-medium text-amber-900 mb-2">ประเภท</label>
           <div className="flex flex-wrap gap-2">
-            {['swissround', 'tournament', 'ซ้อม'].map((opt) => (
+            {['swissround', 'tournament', 'Practise'].map((opt) => (
               <button
                 key={opt}
                 type="button"
