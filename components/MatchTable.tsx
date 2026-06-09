@@ -4,6 +4,17 @@ import { useMemo, useState } from 'react'
 import type { Match, MatchResult } from '@/lib/types'
 
 const RESULT_LABELS: Record<MatchResult, string> = { win: 'ชนะ', loss: 'แพ้', draw: 'เสมอ' }
+
+// Keys in the order they appear in the match form (practice mode)
+const EXTRA_KEY_ORDER = [
+  'Mulligan',
+  'Turn Counts',
+  'RM_Counter Blast',
+  'RM_Soul',
+  'RM_Energy',
+  'RM_Damage Denial',
+  'RM_Shield Value',
+]
 const RESULT_BADGE: Record<MatchResult, string> = {
   win: 'bg-amber-100 text-amber-950',
   loss: 'bg-red-50 text-red-600',
@@ -51,7 +62,14 @@ export default function MatchTable({
   const extraKeys = useMemo(() => {
     const keys = new Set<string>()
     for (const m of matches) Object.keys(m.extra ?? {}).forEach((k) => keys.add(k))
-    return Array.from(keys)
+    return Array.from(keys).sort((a, b) => {
+      const ai = EXTRA_KEY_ORDER.indexOf(a)
+      const bi = EXTRA_KEY_ORDER.indexOf(b)
+      if (ai !== -1 && bi !== -1) return ai - bi
+      if (ai !== -1) return -1
+      if (bi !== -1) return 1
+      return 0
+    })
   }, [matches])
 
   return (
@@ -88,7 +106,7 @@ export default function MatchTable({
               <th className="px-4 py-2 font-medium">คะแนน</th>
               <th className="px-4 py-2 font-medium">บันทึก</th>
               {extraKeys.map((k) => (
-                <th key={k} className="px-4 py-2 font-medium">{k}</th>
+                <th key={k} className="px-4 py-2 font-medium">{k.startsWith('RM_') ? k.slice(3) : k}</th>
               ))}
               {isOwner && <th className="px-4 py-2 font-medium text-right">จัดการ</th>}
             </tr>
