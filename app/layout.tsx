@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "สถิติการแข่งขัน",
+  title: "Battle Report",
   description: "เก็บสถิติการแข่งขันของคุณและเพื่อนๆ",
 };
 
