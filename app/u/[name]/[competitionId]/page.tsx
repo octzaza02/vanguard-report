@@ -132,12 +132,11 @@ export default function CompetitionPage({
                     className="max-h-40 rounded-md border border-amber-300 object-contain shrink-0"
                   />
                 )}
-                <div className="min-w-0">
-                  <p className="text-xs font-medium text-amber-700 mb-1">Decklog (เด็คที่ใช้)</p>
-                  {competition.decklog && (
+                {competition.decklog && (
+                  <div className="min-w-0">
                     <p className="text-sm text-amber-900 whitespace-pre-wrap">{competition.decklog}</p>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
