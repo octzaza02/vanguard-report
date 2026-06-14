@@ -447,53 +447,6 @@ export default function MatchForm({
 
         </>
 
-        <div>
-          <label className="block text-sm font-medium text-amber-900 mb-1">บันทึกส่วนตัว</label>
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            rows={3}
-            className="w-full rounded-md border border-amber-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500"
-            placeholder="สิ่งที่ทำได้ดี / สิ่งที่ต้องปรับปรุง"
-          />
-        </div>
-
-        <div>
-          <div className="flex items-center justify-between mb-1">
-            <label className="block text-sm font-medium text-amber-900">ฟิลด์กำหนดเอง</label>
-            <button type="button" onClick={addExtraField} className="text-sm text-amber-700 underline hover:text-amber-950">
-              + เพิ่มฟิลด์
-            </button>
-          </div>
-          <div className="space-y-2">
-            {extraFields.map((f, idx) => (
-              <div key={idx} className="flex gap-2">
-                <input
-                  type="text"
-                  value={f.key}
-                  onChange={(e) => updateExtraField(idx, { key: e.target.value })}
-                  placeholder="ชื่อฟิลด์"
-                  className="w-1/3 rounded-md border border-amber-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
-                />
-                <input
-                  type="text"
-                  value={f.value}
-                  onChange={(e) => updateExtraField(idx, { value: e.target.value })}
-                  placeholder="ค่า"
-                  className="flex-1 rounded-md border border-amber-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
-                />
-                <button
-                  type="button"
-                  onClick={() => removeExtraField(idx)}
-                  className="px-2 text-amber-500 hover:text-red-600"
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-
         {error && <p className="text-sm text-red-600">{error}</p>}
         <div className="flex justify-end gap-2 pt-2">
           <button type="button" onClick={onClose} className="px-4 py-2 rounded-md text-amber-700 hover:bg-amber-50">
