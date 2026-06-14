@@ -5,16 +5,26 @@ import type { Match, MatchResult } from '@/lib/types'
 
 const RESULT_LABELS: Record<MatchResult, string> = { win: 'ชนะ', loss: 'แพ้', draw: 'เสมอ' }
 
+const PRACTICE_SECTIONS = ['Mulligan', 'Turn Counts', 'Misplays', 'Turning Point', 'Death Cards'] as const
+
 // Keys in the order they appear in the match form (practice mode)
 const EXTRA_KEY_ORDER = [
-  'Mulligan',
-  'Turn Counts',
   'RM_Counter Blast',
   'RM_Soul',
   'RM_Energy',
   'RM_Damage Denial',
   'RM_Shield Value',
 ]
+
+function getPracticeData(m: Match): { sec: string; items: string[] }[] {
+  return PRACTICE_SECTIONS.flatMap((sec) => {
+    const prefix = `${sec}::`
+    const items = Object.entries(m.extra ?? {})
+      .filter(([k]) => k.startsWith(prefix))
+      .map(([k, v]) => (v ? `${k.slice(prefix.length)}: ${v}` : k.slice(prefix.length)))
+    return items.length > 0 ? [{ sec, items }] : []
+  })
+}
 const RESULT_BADGE: Record<MatchResult, string> = {
   win: 'bg-amber-100 text-amber-950',
   loss: 'bg-red-50 text-red-600',
@@ -37,6 +47,7 @@ export default function MatchTable({
   const [resultFilter, setResultFilter] = useState<MatchResult | 'all'>('all')
   const [sortKey, setSortKey] = useState<SortKey>('round_number')
   const [sortAsc, setSortAsc] = useState(true)
+  const [expandedId, setExpandedId] = useState<string | null>(null)
 
   const filtered = useMemo(() => {
     let rows = matches
@@ -61,7 +72,12 @@ export default function MatchTable({
 
   const extraKeys = useMemo(() => {
     const keys = new Set<string>()
-    for (const m of matches) Object.keys(m.extra ?? {}).forEach((k) => keys.add(k))
+    for (const m of matches) {
+      Object.keys(m.extra ?? {}).forEach((k) => {
+        // exclude practice section keys — shown in expanded bullet row instead
+        if (!PRACTICE_SECTIONS.some((sec) => k.startsWith(`${sec}::`))) keys.add(k)
+      })
+    }
     return Array.from(keys).sort((a, b) => {
       const ai = EXTRA_KEY_ORDER.indexOf(a)
       const bi = EXTRA_KEY_ORDER.indexOf(b)
@@ -112,38 +128,77 @@ export default function MatchTable({
             </tr>
           </thead>
           <tbody>
-            {filtered.map((m) => (
-              <tr key={m.id} className="border-b border-amber-200 last:border-0 hover:bg-amber-50">
-                <td className="px-4 py-2 whitespace-nowrap text-amber-950 font-medium">{m.round_number ?? '—'}</td>
-                <td className="px-4 py-2 whitespace-nowrap text-amber-900">{m.match_date}</td>
-                <td className="px-4 py-2 text-amber-900">{m.opponent || '—'}</td>
-                <td className="px-4 py-2 text-amber-900">
-                  {m.went_first === true ? 'เริ่มก่อน' : m.went_first === false ? 'เริ่มหลัง' : '—'}
-                </td>
-                <td className="px-4 py-2">
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${RESULT_BADGE[m.result]}`}>
-                    {RESULT_LABELS[m.result]}
-                  </span>
-                </td>
-                <td className="px-4 py-2 text-amber-900">{m.score || '—'}</td>
-                <td className="px-4 py-2 text-amber-600 max-w-xs whitespace-pre-wrap break-words align-top">
-                  {m.notes || '—'}
-                </td>
-                {extraKeys.map((k) => (
-                  <td key={k} className="px-4 py-2 text-amber-600">{m.extra?.[k] ?? '—'}</td>
-                ))}
-                {isOwner && (
-                  <td className="px-4 py-2 text-right whitespace-nowrap">
-                    <button onClick={() => onEdit(m)} className="text-amber-700 hover:underline mr-3">
-                      แก้ไข
-                    </button>
-                    <button onClick={() => onDelete(m)} className="text-red-600 hover:underline">
-                      ลบ
-                    </button>
-                  </td>
-                )}
-              </tr>
-            ))}
+            {filtered.map((m) => {
+              const practiceData = getPracticeData(m)
+              const hasPractice = practiceData.length > 0
+              const isExpanded = expandedId === m.id
+              const colSpan = 7 + extraKeys.length + (isOwner ? 1 : 0)
+              return (
+                <>
+                  <tr
+                    key={m.id}
+                    className={`border-b ${isExpanded ? '' : 'border-amber-200'} hover:bg-amber-50 ${hasPractice ? 'cursor-pointer' : ''}`}
+                    onClick={() => hasPractice && setExpandedId(isExpanded ? null : m.id)}
+                  >
+                    <td className="px-4 py-2 whitespace-nowrap text-amber-950 font-medium">
+                      {m.round_number ?? '—'}
+                      {hasPractice && (
+                        <span className="ml-1.5 text-amber-400 text-xs">{isExpanded ? '▲' : '▼'}</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-2 whitespace-nowrap text-amber-900">{m.match_date}</td>
+                    <td className="px-4 py-2 text-amber-900">{m.opponent || '—'}</td>
+                    <td className="px-4 py-2 text-amber-900">
+                      {m.went_first === true ? 'เริ่มก่อน' : m.went_first === false ? 'เริ่มหลัง' : '—'}
+                    </td>
+                    <td className="px-4 py-2">
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${RESULT_BADGE[m.result]}`}>
+                        {RESULT_LABELS[m.result]}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2 text-amber-900">{m.score || '—'}</td>
+                    <td className="px-4 py-2 text-amber-600 max-w-xs whitespace-pre-wrap break-words align-top">
+                      {m.notes || '—'}
+                    </td>
+                    {extraKeys.map((k) => (
+                      <td key={k} className="px-4 py-2 text-amber-600">{m.extra?.[k] ?? '—'}</td>
+                    ))}
+                    {isOwner && (
+                      <td className="px-4 py-2 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                        <button onClick={() => onEdit(m)} className="text-amber-700 hover:underline mr-3">
+                          แก้ไข
+                        </button>
+                        <button onClick={() => onDelete(m)} className="text-red-600 hover:underline">
+                          ลบ
+                        </button>
+                      </td>
+                    )}
+                  </tr>
+                  {isExpanded && hasPractice && (
+                    <tr key={`${m.id}-detail`} className="border-b border-amber-200 bg-amber-50/60">
+                      <td colSpan={colSpan} className="px-6 py-3">
+                        <p className="text-xs font-semibold text-amber-600 uppercase tracking-wide mb-2">ข้อมูลการ Practise</p>
+                        <div className="grid grid-cols-2 gap-x-8 gap-y-2 sm:grid-cols-3">
+                          {practiceData.map(({ sec, items }) => (
+                            <div key={sec}>
+                              <p className="text-xs font-semibold text-amber-800 mb-1">{sec}</p>
+                              <ul className="space-y-0.5">
+                                {items.map((item, i) => (
+                                  <li key={i} className="flex items-start gap-1.5 text-sm text-amber-900">
+                                    <span className="mt-0.5 text-amber-500 shrink-0">•</span>
+                                    <span>{item}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          ))}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </>
+              )
+            })}
             {filtered.length === 0 && (
               <tr>
                 <td colSpan={8 + extraKeys.length + (isOwner ? 1 : 0)} className="px-4 py-8 text-center text-amber-500">

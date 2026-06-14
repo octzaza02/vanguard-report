@@ -52,18 +52,26 @@ export default function MatchForm({
       })
     ) as Record<ResourceField, ResourceRating>
   )
-  const [practiceDynFields, setPracticeDynFields] = useState<Record<PracticeDynSection, ExtraField[]>>(() => {
-    const init = (sec: PracticeDynSection): ExtraField[] => []
-    return Object.fromEntries(PRACTICE_DYN_SECTIONS.map((s) => [s, init(s)])) as Record<PracticeDynSection, ExtraField[]>
-  })
-  const allReservedKeys = [
-    ...PRACTICE_DYN_SECTIONS,
-    ...RESOURCE_FIELDS.map((k) => `RM_${k}`),
-  ] as readonly string[]
+  const [practiceDynFields, setPracticeDynFields] = useState<Record<PracticeDynSection, ExtraField[]>>(() =>
+    Object.fromEntries(
+      PRACTICE_DYN_SECTIONS.map((sec) => {
+        if (!initial?.extra) return [sec, []]
+        const prefix = `${sec}::`
+        const rows = Object.entries(initial.extra)
+          .filter(([k]) => k.startsWith(prefix))
+          .map(([k, v]) => ({ key: k.slice(prefix.length), value: String(v) }))
+        return [sec, rows]
+      })
+    ) as Record<PracticeDynSection, ExtraField[]>
+  )
   const [extraFields, setExtraFields] = useState<ExtraField[]>(
     initial?.extra
       ? Object.entries(initial.extra)
-          .filter(([key]) => !allReservedKeys.includes(key))
+          .filter(([key]) => {
+            if (RESOURCE_FIELDS.some((k) => key === `RM_${k}`)) return false
+            if (PRACTICE_DYN_SECTIONS.some((sec) => key.startsWith(`${sec}::`))) return false
+            return true
+          })
           .map(([key, value]) => ({ key, value: String(value) }))
       : []
   )
@@ -104,7 +112,7 @@ export default function MatchForm({
         }
         for (const sec of PRACTICE_DYN_SECTIONS) {
           for (const f of practiceDynFields[sec]) {
-            if (f.key.trim()) extra[f.key.trim()] = f.value
+            if (f.key.trim()) extra[`${sec}::${f.key.trim()}`] = f.value
           }
         }
       }
