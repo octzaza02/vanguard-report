@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import type { Match, MatchResult } from '@/lib/types'
 
 const RESULT_LABELS: Record<MatchResult, string> = { win: 'ชนะ', loss: 'แพ้', draw: 'เสมอ' }
@@ -148,9 +148,8 @@ export default function MatchTable({
               const hasPractice = practiceData.length > 0 || !!m.extra?.['WinLoseSummary'] || !!m.extra?.['NextStrategy']
               const colSpan = 7 + extraKeys.length + (isOwner ? 1 : 0)
               return (
-                <>
+                <Fragment key={m.id}>
                   <tr
-                    key={m.id}
                     className={`border-b ${hasPractice ? '' : 'border-amber-200'} hover:bg-amber-50`}
                   >
                     <td className="px-4 py-2 whitespace-nowrap text-amber-950 font-medium">
@@ -222,7 +221,7 @@ export default function MatchTable({
                       </td>
                     </tr>
                   )}
-                </>
+                </Fragment>
               )
             })}
             {filtered.length === 0 && (
