@@ -8,6 +8,12 @@ import { resizeToDataUrl } from '@/lib/image'
 
 const MAX_DECKLOG_DIM = 480
 
+type AttachmentDraft = { image: string | null; note: string }
+
+function emptyAttachment(): AttachmentDraft {
+  return { image: null, note: '' }
+}
+
 export default function CompetitionForm({
   initial,
   onSubmit,
@@ -20,28 +26,40 @@ export default function CompetitionForm({
   const [name, setName] = useState(initial?.name ?? '')
   const [category, setCategory] = useState(initial?.category ?? '')
   const [decklog, setDecklog] = useState(initial?.decklog ?? '')
-  const [decklogImage, setDecklogImage] = useState<string | null>(initial?.decklog_image ?? null)
-  const [notes, setNotes] = useState(initial?.notes ?? '')
-  const [error, setError] = useState<string | null>(null)
-  const [imageError, setImageError] = useState<string | null>(null)
-  const [saving, setSaving] = useState(false)
-  const fileRef = useRef<HTMLInputElement>(null)
 
-  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+  // Seed attachments from DB: prefer attachments array, fall back to legacy decklog_image+notes
+  const [attachments, setAttachments] = useState<AttachmentDraft[]>(() => {
+    if (initial?.attachments && initial.attachments.length > 0) return initial.attachments
+    return [{ image: initial?.decklog_image ?? null, note: initial?.notes ?? '' }]
+  })
+
+  const [error, setError] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+  const fileRefs = useRef<(HTMLInputElement | null)[]>([])
+
+  function updateAttachment(idx: number, patch: Partial<AttachmentDraft>) {
+    setAttachments((prev) => prev.map((a, i) => (i === idx ? { ...a, ...patch } : a)))
+  }
+
+  function removeAttachment(idx: number) {
+    setAttachments((prev) => prev.filter((_, i) => i !== idx))
+  }
+
+  async function handleFile(idx: number, e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    setImageError(null)
     if (!file.type.startsWith('image/')) {
-      setImageError('กรุณาเลือกไฟล์รูปภาพ')
+      alert('กรุณาเลือกไฟล์รูปภาพ')
       return
     }
     try {
       const dataUrl = await resizeToDataUrl(file, MAX_DECKLOG_DIM, 0.85)
-      setDecklogImage(dataUrl)
+      updateAttachment(idx, { image: dataUrl })
     } catch (err) {
-      setImageError(err instanceof Error ? err.message : 'อัปโหลดรูปไม่สำเร็จ')
+      alert(err instanceof Error ? err.message : 'อัปโหลดรูปไม่สำเร็จ')
     } finally {
-      if (fileRef.current) fileRef.current.value = ''
+      const ref = fileRefs.current[idx]
+      if (ref) ref.value = ''
     }
   }
 
@@ -54,7 +72,17 @@ export default function CompetitionForm({
     }
     setSaving(true)
     try {
-      await onSubmit({ name: name.trim(), game: '', category, decklog, decklogImage, notes })
+      // Keep legacy fields in sync with first attachment for backward compat
+      const first = attachments[0] ?? emptyAttachment()
+      await onSubmit({
+        name: name.trim(),
+        game: '',
+        category,
+        decklog,
+        decklogImage: first.image,
+        notes: first.note,
+        attachments,
+      })
       onClose()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'บันทึกไม่สำเร็จ')
@@ -96,7 +124,6 @@ export default function CompetitionForm({
           </div>
         </div>
 
-        {/* Decklog text */}
         <div>
           <label className="block text-sm font-medium text-amber-900 mb-1">Decklog (เด็คที่ใช้)</label>
           <textarea
@@ -108,48 +135,74 @@ export default function CompetitionForm({
           />
         </div>
 
-        {/* Decklog image + Note — same box */}
-        <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-3 space-y-3">
-          {decklogImage && (
-            <div className="flex items-start gap-3">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={decklogImage}
-                alt="Decklog"
-                className="max-h-40 rounded-md border border-amber-300 object-contain shrink-0"
-              />
-              <button
-                type="button"
-                onClick={() => setDecklogImage(null)}
-                className="text-sm text-red-600 hover:underline"
-              >
-                ลบรูป
-              </button>
+        {/* Dynamic attachment boxes */}
+        {attachments.map((att, idx) => (
+          <div key={idx} className="rounded-lg border border-amber-200 bg-amber-50/50 p-3 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-amber-600 uppercase tracking-wide">
+                กรอบที่ {idx + 1}
+              </span>
+              {attachments.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => removeAttachment(idx)}
+                  className="text-xs text-red-500 hover:text-red-700"
+                >
+                  ลบกรอบนี้
+                </button>
+              )}
             </div>
-          )}
-          <div>
-            <label className="block text-xs font-medium text-amber-600 mb-1">แนบรูป Decklog (ถ้ามี)</label>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              onChange={handleFile}
-              className="w-full text-sm text-amber-700 file:mr-3 file:rounded-md file:border file:border-amber-300 file:bg-amber-50 file:px-3 file:py-1.5 file:text-amber-900 file:hover:bg-amber-100 file:transition"
-            />
-            <p className="text-xs text-amber-500 mt-1">รูปจะถูกย่อขนาดอัตโนมัติก่อนบันทึก</p>
-            {imageError && <p className="text-sm text-red-600 mt-1">{imageError}</p>}
+
+            {att.image && (
+              <div className="flex items-start gap-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={att.image}
+                  alt="Attachment"
+                  className="max-h-40 rounded-md border border-amber-300 object-contain shrink-0"
+                />
+                <button
+                  type="button"
+                  onClick={() => updateAttachment(idx, { image: null })}
+                  className="text-sm text-red-600 hover:underline"
+                >
+                  ลบรูป
+                </button>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-xs font-medium text-amber-600 mb-1">แนบรูป (ถ้ามี)</label>
+              <input
+                ref={(el) => { fileRefs.current[idx] = el }}
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleFile(idx, e)}
+                className="w-full text-sm text-amber-700 file:mr-3 file:rounded-md file:border file:border-amber-300 file:bg-amber-50 file:px-3 file:py-1.5 file:text-amber-900 file:hover:bg-amber-100 file:transition"
+              />
+              <p className="text-xs text-amber-500 mt-1">รูปจะถูกย่อขนาดอัตโนมัติก่อนบันทึก</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-amber-900 mb-1">Note</label>
+              <textarea
+                value={att.note}
+                onChange={(e) => updateAttachment(idx, { note: e.target.value })}
+                rows={3}
+                className="w-full rounded-md border border-amber-300 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                placeholder="บันทึกเพิ่มเติม"
+              />
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-amber-900 mb-1">Note</label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={3}
-              className="w-full rounded-md border border-amber-300 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500"
-              placeholder="บันทึกเพิ่มเติม"
-            />
-          </div>
-        </div>
+        ))}
+
+        <button
+          type="button"
+          onClick={() => setAttachments((prev) => [...prev, emptyAttachment()])}
+          className="w-full rounded-lg border border-dashed border-amber-300 py-2 text-sm text-amber-600 hover:bg-amber-50 transition"
+        >
+          + เพิ่มกรอบ
+        </button>
 
         {error && <p className="text-sm text-red-600">{error}</p>}
         <div className="flex justify-end gap-2 pt-2">

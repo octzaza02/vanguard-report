@@ -7,6 +7,11 @@ export type User = {
   created_at: string
 }
 
+export type Attachment = {
+  image: string | null
+  note: string
+}
+
 export type Competition = {
   id: string
   user_id: string
@@ -16,6 +21,7 @@ export type Competition = {
   decklog: string | null
   decklog_image: string | null
   notes: string | null
+  attachments: Attachment[]
   created_at: string
 }
 

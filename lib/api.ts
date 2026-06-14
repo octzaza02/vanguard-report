@@ -105,6 +105,7 @@ export type CompetitionInput = {
   decklog: string
   decklogImage: string | null
   notes: string
+  attachments: { image: string | null; note: string }[]
 }
 
 export async function createCompetition(token: string, fields: CompetitionInput): Promise<Competition> {
@@ -116,6 +117,7 @@ export async function createCompetition(token: string, fields: CompetitionInput)
     p_decklog: fields.decklog,
     p_decklog_image: fields.decklogImage,
     p_notes: fields.notes,
+    p_attachments: fields.attachments,
   })
   if (error) throw new Error(error.message)
   return data
@@ -131,6 +133,7 @@ export async function updateCompetition(token: string, id: string, fields: Compe
     p_decklog: fields.decklog,
     p_decklog_image: fields.decklogImage,
     p_notes: fields.notes,
+    p_attachments: fields.attachments,
   })
   if (error) throw new Error(error.message)
   return data

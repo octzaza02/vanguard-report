@@ -122,23 +122,31 @@ export default function CompetitionPage({
                 {[competition.game, competition.category].filter(Boolean).join(' · ') || 'ไม่ระบุเกม/ประเภท'}
               </p>
             )}
-            {competition && (competition.decklog || competition.decklog_image) && (
-              <div className="mt-3 flex items-start gap-3 rounded-lg border border-amber-200 bg-white p-3">
-                {competition.decklog_image && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={competition.decklog_image}
-                    alt="Decklog"
-                    className="max-h-40 rounded-md border border-amber-300 object-contain shrink-0"
-                  />
-                )}
-                {competition.decklog && (
-                  <div className="min-w-0">
-                    <p className="text-sm text-amber-900 whitespace-pre-wrap">{competition.decklog}</p>
-                  </div>
-                )}
-              </div>
+            {competition && competition.decklog && (
+              <p className="mt-2 text-sm text-amber-900 whitespace-pre-wrap">{competition.decklog}</p>
             )}
+            {competition && (competition.attachments?.length > 0
+              ? competition.attachments
+              : (competition.decklog_image || competition.notes)
+                ? [{ image: competition.decklog_image, note: competition.notes ?? '' }]
+                : []
+            ).map((att, idx) => (
+              (att.image || att.note) && (
+                <div key={idx} className="mt-3 rounded-lg border border-amber-200 bg-white p-3 space-y-2">
+                  {att.image && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={att.image}
+                      alt="Attachment"
+                      className="max-h-40 rounded-md border border-amber-300 object-contain"
+                    />
+                  )}
+                  {att.note && (
+                    <p className="text-sm text-amber-900 whitespace-pre-wrap">{att.note}</p>
+                  )}
+                </div>
+              )
+            ))}
           </div>
           {isOwner && (
             <div className="shrink-0">
