@@ -101,10 +101,12 @@ const DIVIDER_GAP = 40         // space between divider and body content
 
 const COMP_NAME_LINE_H = 68
 const COMP_NAME_BLOCK = COMP_NAME_LINE_H * 2 + 8   // reserve 2 lines
-const CATEGORY_H = 60
 const STAT_CELL_H = 124
-const STATS_BOTTOM_GAP = 48
-const LEFT_COL_BODY_H = COMP_NAME_BLOCK + CATEGORY_H + STAT_CELL_H + STATS_BOTTOM_GAP
+const STATS_BOTTOM_GAP = 32
+const PIE_RADIUS = 66
+const PIE_TOP_GAP = 36
+const PIE_SECTION_H = PIE_RADIUS * 2 + PIE_TOP_GAP + 28
+const LEFT_COL_BODY_H = COMP_NAME_BLOCK + STAT_CELL_H + STATS_BOTTOM_GAP + PIE_SECTION_H
 
 const DECK_IMG_H = RIGHT_W     // square deck image
 const DECK_NAME_H = 56         // deck name text below image
@@ -188,17 +190,8 @@ export async function buildCompetitionShareImage(
   ctx.font = '700 54px system-ui, "Noto Sans Thai", sans-serif'
   wrapText(ctx, competition.name, leftX, bodyTop, LEFT_W, COMP_NAME_LINE_H, 2)
 
-  // LEFT: Category
-  const catY = bodyTop + COMP_NAME_BLOCK
-  const subtitle = [competition.game, competition.category].filter(Boolean).join(' · ')
-  if (subtitle) {
-    ctx.fillStyle = COLORS.dim
-    ctx.font = '400 30px system-ui, "Noto Sans Thai", sans-serif'
-    ctx.fillText(subtitle, leftX, catY)
-  }
-
-  // LEFT: Stats (5 cells in a single row)
-  const statsY = catY + CATEGORY_H
+  // LEFT: Stats (4 cells — total, win, loss, draw)
+  const statsY = bodyTop + COMP_NAME_BLOCK
   const total = matches.length
   const wins = matches.filter((m) => m.result === 'win').length
   const losses = matches.filter((m) => m.result === 'loss').length
@@ -210,7 +203,6 @@ export async function buildCompetitionShareImage(
     { label: 'ชนะ', value: String(wins), color: COLORS.win },
     { label: 'แพ้', value: String(losses), color: COLORS.loss },
     { label: 'เสมอ', value: String(draws), color: COLORS.draw },
-    { label: 'อัตราชนะ', value: `${winRate}%`, color: COLORS.title },
   ]
   const statGap = 16
   const statCellW = (LEFT_W - statGap * (stats.length - 1)) / stats.length
@@ -235,6 +227,69 @@ export async function buildCompetitionShareImage(
     ctx.font = '400 22px system-ui, "Noto Sans Thai", sans-serif'
     ctx.fillText(s.label, sx + statCellW / 2, statsY + 96)
     ctx.textAlign = 'left'
+  })
+
+  // LEFT: Pie (donut) chart + legend
+  const pieTopY = statsY + STAT_CELL_H + PIE_TOP_GAP
+  const pieCX = leftX + PIE_RADIUS + 8
+  const pieCY = pieTopY + PIE_RADIUS
+  const pieSlices = [
+    { value: wins,   color: COLORS.win,  label: 'ชนะ' },
+    { value: losses, color: COLORS.loss, label: 'แพ้' },
+    { value: draws,  color: '#a16207',   label: 'เสมอ' },
+  ]
+
+  if (total > 0) {
+    let startAngle = -Math.PI / 2
+    pieSlices.forEach((s) => {
+      if (s.value === 0) return
+      const sliceAngle = (s.value / total) * Math.PI * 2
+      ctx.fillStyle = s.color
+      ctx.beginPath()
+      ctx.moveTo(pieCX, pieCY)
+      ctx.arc(pieCX, pieCY, PIE_RADIUS, startAngle, startAngle + sliceAngle)
+      ctx.closePath()
+      ctx.fill()
+      startAngle += sliceAngle
+    })
+    // Donut hole
+    ctx.fillStyle = COLORS.bg
+    ctx.beginPath()
+    ctx.arc(pieCX, pieCY, PIE_RADIUS * 0.46, 0, Math.PI * 2)
+    ctx.fill()
+    // Win rate in centre
+    ctx.fillStyle = COLORS.win
+    ctx.font = '700 24px system-ui, "Noto Sans Thai", sans-serif'
+    ctx.textAlign = 'center'
+    ctx.fillText(`${winRate}%`, pieCX, pieCY + 9)
+    ctx.textAlign = 'left'
+  } else {
+    ctx.strokeStyle = COLORS.border
+    ctx.lineWidth = 3
+    ctx.beginPath()
+    ctx.arc(pieCX, pieCY, PIE_RADIUS, 0, Math.PI * 2)
+    ctx.stroke()
+  }
+
+  // Legend beside the pie
+  const legX = pieCX + PIE_RADIUS + 32
+  const legStartY = pieCY - (pieSlices.length - 1) * 25
+  pieSlices.forEach((s, i) => {
+    const ly = legStartY + i * 52
+    // Colour dot
+    ctx.fillStyle = s.color
+    ctx.beginPath()
+    ctx.arc(legX + 10, ly, 10, 0, Math.PI * 2)
+    ctx.fill()
+    // Label + count
+    ctx.fillStyle = COLORS.title
+    ctx.font = '600 26px system-ui, "Noto Sans Thai", sans-serif'
+    ctx.fillText(`${s.label}  ${s.value}`, legX + 28, ly + 9)
+    // Percentage
+    const pct = total > 0 ? Math.round((s.value / total) * 100) : 0
+    ctx.fillStyle = COLORS.dim
+    ctx.font = '400 22px system-ui, "Noto Sans Thai", sans-serif'
+    ctx.fillText(`${pct}%`, legX + 180, ly + 9)
   })
 
   // RIGHT: Deck image
