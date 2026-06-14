@@ -1,6 +1,6 @@
 'use client'
 
-import { use, useEffect, useState, useCallback } from 'react'
+import { use, useEffect, useState, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import {
   getCompetition,
@@ -16,7 +16,12 @@ import StatsSummary from '@/components/StatsSummary'
 import StatsCharts from '@/components/StatsCharts'
 import MatchTable from '@/components/MatchTable'
 import MatchForm from '@/components/MatchForm'
-import { buildCompetitionShareImage, downloadDataUrl } from '@/lib/shareCard'
+import {
+  buildCompetitionShareCanvas,
+  canvasToDataUrl,
+  downloadDataUrl,
+  type ShareFormat,
+} from '@/lib/shareCard'
 
 export default function CompetitionPage({
   params,
@@ -35,6 +40,9 @@ export default function CompetitionPage({
   const [editing, setEditing] = useState<Match | null>(null)
   const [sharing, setSharing] = useState(false)
   const [shareError, setShareError] = useState<string | null>(null)
+  const [sharePreview, setSharePreview] = useState<{ previewUrl: string; baseName: string } | null>(null)
+  const [saveFormat, setSaveFormat] = useState<ShareFormat>('jpeg')
+  const shareCanvasRef = useRef<HTMLCanvasElement | null>(null)
 
   const reload = useCallback(async () => {
     try {
@@ -69,14 +77,25 @@ export default function CompetitionPage({
     setShareError(null)
     setSharing(true)
     try {
-      const dataUrl = await buildCompetitionShareImage(competition, matches ?? [], decodedName)
+      const canvas = await buildCompetitionShareCanvas(competition, matches ?? [], decodedName)
+      shareCanvasRef.current = canvas
+      const previewUrl = canvasToDataUrl(canvas, 'jpeg')
       const safeName = competition.name.replace(/[\\/:*?"<>|]+/g, '_').trim() || 'competition'
-      downloadDataUrl(dataUrl, `${safeName}-stats.jpg`)
+      setSharePreview({ previewUrl, baseName: safeName })
     } catch (err) {
       setShareError(err instanceof Error ? err.message : 'สร้างรูปไม่สำเร็จ')
     } finally {
       setSharing(false)
     }
+  }
+
+  function handleSaveImage() {
+    const canvas = shareCanvasRef.current
+    if (!canvas || !sharePreview) return
+    const ext = saveFormat === 'png' ? 'png' : 'jpg'
+    const dataUrl = canvasToDataUrl(canvas, saveFormat)
+    downloadDataUrl(dataUrl, `${sharePreview.baseName}-stats.${ext}`)
+    setSharePreview(null)
   }
 
   async function handleDeleteMatch(m: Match) {
@@ -209,6 +228,79 @@ export default function CompetitionPage({
         />
       )}
 
+      {sharePreview && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => setSharePreview(null)}
+        >
+          <div
+            className="flex w-full max-w-2xl flex-col rounded-xl border border-amber-300 bg-white p-4 shadow-xl max-h-[92vh]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="mb-3 flex items-center justify-between shrink-0">
+              <h2 className="text-lg font-semibold text-amber-950">ตัวอย่างรูปสรุปสถิติ</h2>
+              <button
+                onClick={() => setSharePreview(null)}
+                className="text-amber-400 hover:text-amber-900 text-xl leading-none"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Preview image */}
+            <div className="overflow-y-auto rounded-lg border border-amber-200 min-h-0">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={sharePreview.previewUrl}
+                alt="ตัวอย่างรูปสรุปสถิติ"
+                className="block w-full h-auto"
+              />
+            </div>
+
+            {/* Format picker + save */}
+            <div className="mt-3 shrink-0 space-y-3">
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-amber-700 shrink-0">บันทึกเป็น:</span>
+                <div className="flex gap-2">
+                  {([
+                    { fmt: 'jpeg' as ShareFormat, label: 'JPG', desc: 'เล็ก เหมาะส่ง LINE / social' },
+                    { fmt: 'png'  as ShareFormat, label: 'PNG', desc: 'คุณภาพสูง ข้อความคมชัด' },
+                  ]).map(({ fmt, label, desc }) => (
+                    <button
+                      key={fmt}
+                      onClick={() => setSaveFormat(fmt)}
+                      className={`flex flex-col items-start px-3 py-2 rounded-lg border text-left transition ${
+                        saveFormat === fmt
+                          ? 'border-amber-500 bg-amber-50 text-amber-900'
+                          : 'border-amber-200 text-amber-700 hover:border-amber-400'
+                      }`}
+                    >
+                      <span className="text-sm font-semibold">{label}</span>
+                      <span className="text-xs text-amber-500">{desc}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => setSharePreview(null)}
+                  className="px-4 py-2 rounded-md text-amber-700 hover:bg-amber-50 text-sm"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  onClick={handleSaveImage}
+                  className="px-5 py-2 rounded-md bg-amber-600 text-white hover:bg-amber-500 text-sm font-medium"
+                >
+                  💾 บันทึกรูป ({saveFormat === 'png' ? 'PNG' : 'JPG'})
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

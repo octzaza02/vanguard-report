@@ -128,11 +128,11 @@ const MATCH_ROW_H = 54
 const MATCH_BOTTOM_GAP = 36
 const FOOTER_H = 80
 
-export async function buildCompetitionShareImage(
+export async function buildCompetitionShareCanvas(
   competition: Competition,
   matches: Match[],
   ownerName: string
-): Promise<string> {
+): Promise<HTMLCanvasElement> {
   // Determine deck image source: prefer decklog_image (synced from first attachment)
   const deckImageSrc: string | null =
     competition.decklog_image ??
@@ -425,7 +425,25 @@ export async function buildCompetitionShareImage(
   const dateStr = new Date().toISOString().slice(0, 10)
   ctx.fillText(`สร้างเมื่อ ${dateStr} · Player Card Battle Report`, PAD, y + 42)
 
-  return canvas.toDataURL('image/jpeg', 0.92)
+  return canvas
+}
+
+export type ShareFormat = 'jpeg' | 'png'
+
+export function canvasToDataUrl(canvas: HTMLCanvasElement, format: ShareFormat): string {
+  return format === 'png'
+    ? canvas.toDataURL('image/png')
+    : canvas.toDataURL('image/jpeg', 0.92)
+}
+
+/** Convenience wrapper — returns a JPEG data-URL (for backward compat / preview). */
+export async function buildCompetitionShareImage(
+  competition: Competition,
+  matches: Match[],
+  ownerName: string
+): Promise<string> {
+  const canvas = await buildCompetitionShareCanvas(competition, matches, ownerName)
+  return canvasToDataUrl(canvas, 'jpeg')
 }
 
 export function downloadDataUrl(dataUrl: string, filename: string) {
