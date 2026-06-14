@@ -35,7 +35,6 @@ export default function CompetitionPage({
   const [editing, setEditing] = useState<Match | null>(null)
   const [sharing, setSharing] = useState(false)
   const [shareError, setShareError] = useState<string | null>(null)
-  const [sharePreview, setSharePreview] = useState<{ url: string; filename: string } | null>(null)
 
   const reload = useCallback(async () => {
     try {
@@ -72,18 +71,12 @@ export default function CompetitionPage({
     try {
       const dataUrl = await buildCompetitionShareImage(competition, matches ?? [], decodedName)
       const safeName = competition.name.replace(/[\\/:*?"<>|]+/g, '_').trim() || 'competition'
-      setSharePreview({ url: dataUrl, filename: `${safeName}-stats.jpg` })
+      downloadDataUrl(dataUrl, `${safeName}-stats.jpg`)
     } catch (err) {
       setShareError(err instanceof Error ? err.message : 'สร้างรูปไม่สำเร็จ')
     } finally {
       setSharing(false)
     }
-  }
-
-  function handleConfirmShareSave() {
-    if (!sharePreview) return
-    downloadDataUrl(sharePreview.url, sharePreview.filename)
-    setSharePreview(null)
   }
 
   async function handleDeleteMatch(m: Match) {
@@ -216,48 +209,6 @@ export default function CompetitionPage({
         />
       )}
 
-      {sharePreview && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-white/60 p-4"
-          onClick={() => setSharePreview(null)}
-        >
-          <div
-            className="flex w-full max-w-lg flex-col rounded-xl border border-amber-300 bg-white p-4 shadow-xl max-h-[90vh]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mb-3 flex items-center justify-between shrink-0">
-              <h2 className="text-lg font-semibold text-amber-950">ตัวอย่างรูปก่อนบันทึก</h2>
-              <button
-                onClick={() => setSharePreview(null)}
-                className="text-amber-500 hover:text-amber-950 text-xl leading-none"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="overflow-y-auto rounded-lg border border-amber-200 min-h-0">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={sharePreview.url} alt="ตัวอย่างรูปสรุปสถิติที่จะบันทึก" className="block w-full h-auto" />
-            </div>
-            <p className="mt-2 text-xs text-amber-500 shrink-0">
-              ตรวจสอบข้อมูลในรูปให้เรียบร้อยก่อนกด &ldquo;บันทึกรูป&rdquo; — ไฟล์จะถูกดาวน์โหลดเป็น {sharePreview.filename}
-            </p>
-            <div className="mt-3 flex justify-end gap-2 shrink-0">
-              <button
-                onClick={() => setSharePreview(null)}
-                className="px-4 py-2 rounded-md text-amber-700 hover:bg-amber-50"
-              >
-                ยกเลิก
-              </button>
-              <button
-                onClick={handleConfirmShareSave}
-                className="px-4 py-2 rounded-md bg-amber-600 text-white hover:bg-amber-500"
-              >
-                💾 บันทึกรูป (.jpg)
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
