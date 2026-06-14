@@ -64,12 +64,15 @@ export default function MatchForm({
       })
     ) as Record<PracticeDynSection, ExtraField[]>
   )
+  const [winLoseSummary, setWinLoseSummary] = useState(initial?.extra?.['WinLoseSummary'] ?? '')
+  const [nextStrategy, setNextStrategy] = useState(initial?.extra?.['NextStrategy'] ?? '')
   const [extraFields, setExtraFields] = useState<ExtraField[]>(
     initial?.extra
       ? Object.entries(initial.extra)
           .filter(([key]) => {
             if (RESOURCE_FIELDS.some((k) => key === `RM_${k}`)) return false
             if (PRACTICE_DYN_SECTIONS.some((sec) => key.startsWith(`${sec}::`))) return false
+            if (key === 'WinLoseSummary' || key === 'NextStrategy') return false
             return true
           })
           .map(([key, value]) => ({ key, value: String(value) }))
@@ -115,6 +118,8 @@ export default function MatchForm({
             if (f.key.trim()) extra[`${sec}::${f.key.trim()}`] = f.value
           }
         }
+        if (winLoseSummary.trim()) extra['WinLoseSummary'] = winLoseSummary.trim()
+        if (nextStrategy.trim()) extra['NextStrategy'] = nextStrategy.trim()
       }
       for (const f of extraFields) {
         if (f.key.trim()) extra[f.key.trim()] = f.value
@@ -348,6 +353,30 @@ export default function MatchForm({
                     </button>
                   </Fragment>
                 ))}
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-amber-200 bg-amber-50/60 px-4 py-3 space-y-3">
+              <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide">สรุปเกม</p>
+              <div>
+                <label className="block text-sm font-medium text-amber-900 mb-1">สรุปผลเกมนี้ชนะ/แพ้เพราะอะไร</label>
+                <textarea
+                  value={winLoseSummary}
+                  onChange={(e) => setWinLoseSummary(e.target.value)}
+                  rows={3}
+                  className="w-full rounded-md border border-amber-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  placeholder="เหตุผลที่ชนะหรือแพ้ในเกมนี้"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-amber-900 mb-1">รอบหน้าเจอเด็คนี้จะแก้ยังไง</label>
+                <textarea
+                  value={nextStrategy}
+                  onChange={(e) => setNextStrategy(e.target.value)}
+                  rows={3}
+                  className="w-full rounded-md border border-amber-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  placeholder="กลยุทธ์หรือการปรับเด็คสำหรับครั้งถัดไป"
+                />
               </div>
             </div>
 

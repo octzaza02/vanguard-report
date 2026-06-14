@@ -74,8 +74,10 @@ export default function MatchTable({
     const keys = new Set<string>()
     for (const m of matches) {
       Object.keys(m.extra ?? {}).forEach((k) => {
-        // exclude practice section keys — shown in expanded bullet row instead
-        if (!PRACTICE_SECTIONS.some((sec) => k.startsWith(`${sec}::`))) keys.add(k)
+        // exclude practice section keys and summary fields — shown in expanded bullet row instead
+        if (PRACTICE_SECTIONS.some((sec) => k.startsWith(`${sec}::`))) return
+        if (k === 'WinLoseSummary' || k === 'NextStrategy') return
+        keys.add(k)
       })
     }
     return Array.from(keys).sort((a, b) => {
@@ -130,7 +132,7 @@ export default function MatchTable({
           <tbody>
             {filtered.map((m) => {
               const practiceData = getPracticeData(m)
-              const hasPractice = practiceData.length > 0
+              const hasPractice = practiceData.length > 0 || !!m.extra?.['WinLoseSummary'] || !!m.extra?.['NextStrategy']
               const isExpanded = expandedId === m.id
               const colSpan = 7 + extraKeys.length + (isOwner ? 1 : 0)
               return (
@@ -176,8 +178,8 @@ export default function MatchTable({
                   </tr>
                   {isExpanded && hasPractice && (
                     <tr key={`${m.id}-detail`} className="border-b border-amber-200 bg-amber-50/60">
-                      <td colSpan={colSpan} className="px-6 py-3">
-                        <p className="text-xs font-semibold text-amber-600 uppercase tracking-wide mb-2">ข้อมูลการ Practise</p>
+                      <td colSpan={colSpan} className="px-6 py-3 space-y-3">
+                        <p className="text-xs font-semibold text-amber-600 uppercase tracking-wide">ข้อมูลการ Practise</p>
                         <div className="grid grid-cols-2 gap-x-8 gap-y-2 sm:grid-cols-3">
                           {practiceData.map(({ sec, items }) => (
                             <div key={sec}>
@@ -193,6 +195,22 @@ export default function MatchTable({
                             </div>
                           ))}
                         </div>
+                        {(m.extra?.['WinLoseSummary'] || m.extra?.['NextStrategy']) && (
+                          <div className="border-t border-amber-200 pt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                            {m.extra?.['WinLoseSummary'] && (
+                              <div>
+                                <p className="text-xs font-semibold text-amber-800 mb-1">สรุปผลเกมนี้ชนะ/แพ้เพราะอะไร</p>
+                                <p className="text-sm text-amber-900 whitespace-pre-wrap">{m.extra['WinLoseSummary']}</p>
+                              </div>
+                            )}
+                            {m.extra?.['NextStrategy'] && (
+                              <div>
+                                <p className="text-xs font-semibold text-amber-800 mb-1">รอบหน้าเจอเด็คนี้จะแก้ยังไง</p>
+                                <p className="text-sm text-amber-900 whitespace-pre-wrap">{m.extra['NextStrategy']}</p>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </td>
                     </tr>
                   )}
