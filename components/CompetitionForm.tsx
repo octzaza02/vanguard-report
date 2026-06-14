@@ -108,8 +108,8 @@ export default function CompetitionForm({
           />
         </div>
 
-        {/* Decklog image — separate box */}
-        <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-3 space-y-2">
+        {/* Decklog image + Note — same box */}
+        <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-3 space-y-3">
           {decklogImage && (
             <div className="flex items-start gap-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -139,18 +139,16 @@ export default function CompetitionForm({
             <p className="text-xs text-amber-500 mt-1">รูปจะถูกย่อขนาดอัตโนมัติก่อนบันทึก</p>
             {imageError && <p className="text-sm text-red-600 mt-1">{imageError}</p>}
           </div>
-        </div>
-
-        {/* Note */}
-        <div>
-          <label className="block text-sm font-medium text-amber-900 mb-1">Note</label>
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            rows={3}
-            className="w-full rounded-md border border-amber-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500"
-            placeholder="บันทึกเพิ่มเติม"
-          />
+          <div>
+            <label className="block text-sm font-medium text-amber-900 mb-1">Note</label>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={3}
+              className="w-full rounded-md border border-amber-300 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500"
+              placeholder="บันทึกเพิ่มเติม"
+            />
+          </div>
         </div>
 
         {error && <p className="text-sm text-red-600">{error}</p>}
