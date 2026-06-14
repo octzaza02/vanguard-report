@@ -111,7 +111,11 @@ const STAT_ROWS = 2
 const STAT_GAP = 16
 const STAT_CELL_W = (STAT_AREA_W - STAT_GAP * (STAT_COLS - 1)) / STAT_COLS
 const STAT_CELL_H = 112
-const COMBINED_H = STAT_ROWS * STAT_CELL_H + (STAT_ROWS - 1) * STAT_GAP  // 240
+const PIE_BELOW_TEXT_H = 58   // space for win% + อัตราชนะ label below pie
+const COMBINED_H = Math.max(
+  STAT_ROWS * STAT_CELL_H + (STAT_ROWS - 1) * STAT_GAP,
+  PIE_RADIUS * 2 + PIE_BELOW_TEXT_H
+)                              // 280 — enough for pie+text AND stat cells
 const COMBINED_TOP_GAP = 32
 const LEFT_COL_BODY_H = COMP_NAME_BLOCK + COMBINED_TOP_GAP + COMBINED_H + 24
 
@@ -205,9 +209,9 @@ export async function buildCompetitionShareImage(
   const draws = matches.filter((m) => m.result === 'draw').length
   const winRate = total > 0 ? Math.round((wins / total) * 100) : 0
 
-  // Pie chart — vertically centred inside COMBINED_H
+  // Pie chart — top-anchored so win% label fits below within COMBINED_H
   const pieCX = leftX + PIE_RADIUS + 4
-  const pieCY = combinedTop + COMBINED_H / 2
+  const pieCY = combinedTop + PIE_RADIUS + (COMBINED_H - PIE_RADIUS * 2 - PIE_BELOW_TEXT_H) / 2
   const pieSlices = [
     { value: wins,   color: COLORS.win,  label: 'ชนะ' },
     { value: losses, color: COLORS.loss, label: 'แพ้' },
@@ -227,26 +231,30 @@ export async function buildCompetitionShareImage(
       ctx.fill()
       startAngle += sliceAngle
     })
-    // Donut hole
+    // Donut hole — clean empty circle
     ctx.fillStyle = COLORS.bg
     ctx.beginPath()
     ctx.arc(pieCX, pieCY, PIE_RADIUS * 0.44, 0, Math.PI * 2)
     ctx.fill()
-    // Win% in centre — two lines: number + label
-    ctx.textAlign = 'center'
-    ctx.fillStyle = COLORS.win
-    ctx.font = `700 ${Math.round(PIE_RADIUS * 0.38)}px system-ui, "Noto Sans Thai", sans-serif`
-    ctx.fillText(`${winRate}%`, pieCX, pieCY + 6)
-    ctx.fillStyle = COLORS.dim
-    ctx.font = `400 ${Math.round(PIE_RADIUS * 0.18)}px system-ui, "Noto Sans Thai", sans-serif`
-    ctx.fillText('อัตราชนะ', pieCX, pieCY + PIE_RADIUS * 0.42)
-    ctx.textAlign = 'left'
   } else {
     ctx.strokeStyle = COLORS.border
     ctx.lineWidth = 3
     ctx.beginPath()
     ctx.arc(pieCX, pieCY, PIE_RADIUS, 0, Math.PI * 2)
     ctx.stroke()
+  }
+
+  // Win% + label below pie
+  {
+    const belowY = pieCY + PIE_RADIUS + 10
+    ctx.textAlign = 'center'
+    ctx.fillStyle = COLORS.win
+    ctx.font = `700 ${Math.round(PIE_RADIUS * 0.38)}px system-ui, "Noto Sans Thai", sans-serif`
+    ctx.fillText(`${winRate}%`, pieCX, belowY + Math.round(PIE_RADIUS * 0.38))
+    ctx.fillStyle = COLORS.dim
+    ctx.font = `400 22px system-ui, "Noto Sans Thai", sans-serif`
+    ctx.fillText('อัตราชนะ', pieCX, belowY + Math.round(PIE_RADIUS * 0.38) + 28)
+    ctx.textAlign = 'left'
   }
 
   // 2×2 stat cells — to the right of the pie
@@ -258,11 +266,14 @@ export async function buildCompetitionShareImage(
     { label: 'เสมอ',         value: String(draws),  color: COLORS.draw },
   ]
 
+  const statCellsH = STAT_ROWS * STAT_CELL_H + (STAT_ROWS - 1) * STAT_GAP
+  const statCellsTop = combinedTop + Math.floor((COMBINED_H - statCellsH) / 2)
+
   stats.forEach((s, i) => {
     const col = i % STAT_COLS
     const row = Math.floor(i / STAT_COLS)
     const sx = statGridX + col * (STAT_CELL_W + STAT_GAP)
-    const sy = combinedTop + row * (STAT_CELL_H + STAT_GAP)
+    const sy = statCellsTop + row * (STAT_CELL_H + STAT_GAP)
 
     ctx.fillStyle = COLORS.cardBg
     roundRect(ctx, sx, sy, STAT_CELL_W, STAT_CELL_H, 14)
