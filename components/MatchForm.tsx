@@ -132,25 +132,23 @@ export default function MatchForm({
     setSaving(true)
     try {
       const extra: Record<string, string> = {}
-      if (isPractice) {
-        for (const k of RESOURCE_FIELDS) {
-          const v = resourceValues[k]
-          const parts = [v.good ? 'Good' : '', v.bad ? 'Bad' : ''].filter(Boolean)
-          if (parts.length > 0) extra[`RM_${k}`] = parts.join(', ')
-        }
-        for (const sub of MULLIGAN_SUBS) {
-          for (const item of mulliganSubFields[sub]) {
-            if (item.trim()) extra[`Mulligan::${sub}::${item.trim()}`] = ''
-          }
-        }
-        for (const sec of PRACTICE_DYN_SECTIONS) {
-          for (const f of practiceDynFields[sec]) {
-            if (f.key.trim()) extra[`${sec}::${f.key.trim()}`] = f.value
-          }
-        }
-        if (winLoseSummary.trim()) extra['WinLoseSummary'] = winLoseSummary.trim()
-        if (nextStrategy.trim()) extra['NextStrategy'] = nextStrategy.trim()
+      for (const k of RESOURCE_FIELDS) {
+        const v = resourceValues[k]
+        const parts = [v.good ? 'Good' : '', v.bad ? 'Bad' : ''].filter(Boolean)
+        if (parts.length > 0) extra[`RM_${k}`] = parts.join(', ')
       }
+      for (const sub of MULLIGAN_SUBS) {
+        for (const item of mulliganSubFields[sub]) {
+          if (item.trim()) extra[`Mulligan::${sub}::${item.trim()}`] = ''
+        }
+      }
+      for (const sec of PRACTICE_DYN_SECTIONS) {
+        for (const f of practiceDynFields[sec]) {
+          if (f.key.trim()) extra[`${sec}::${f.key.trim()}`] = f.value
+        }
+      }
+      if (winLoseSummary.trim()) extra['WinLoseSummary'] = winLoseSummary.trim()
+      if (nextStrategy.trim()) extra['NextStrategy'] = nextStrategy.trim()
       for (const f of extraFields) {
         if (f.key.trim()) extra[f.key.trim()] = f.value
       }
@@ -286,8 +284,7 @@ export default function MatchForm({
           />
         </div>
 
-        {isPractice && (
-          <>
+        <>
             <div className="rounded-lg border border-amber-200 bg-amber-50/60 px-4 py-3 space-y-3">
               <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide">ข้อมูลการPractise</p>
 
@@ -448,8 +445,7 @@ export default function MatchForm({
               </div>
             </div>
 
-          </>
-        )}
+        </>
 
         <div>
           <label className="block text-sm font-medium text-amber-900 mb-1">บันทึกส่วนตัว</label>
