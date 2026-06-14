@@ -13,9 +13,7 @@ function todayISO() {
 
 type ExtraField = { key: string; value: string }
 
-const PRACTICE_BOX1 = ['Mulligan', 'Turn Counts'] as const
-type PracticeFieldKey = (typeof PRACTICE_BOX1)[number]
-const PRACTICE_DYN_SECTIONS = ['Misplays', 'Turning Point', 'Death Cards'] as const
+const PRACTICE_DYN_SECTIONS = ['Mulligan', 'Turn Counts', 'Misplays', 'Turning Point', 'Death Cards'] as const
 type PracticeDynSection = (typeof PRACTICE_DYN_SECTIONS)[number]
 const RESOURCE_FIELDS = ['Counter Blast', 'Soul', 'Energy', 'Damage Denial', 'Shield Value'] as const
 type ResourceField = (typeof RESOURCE_FIELDS)[number]
@@ -45,9 +43,6 @@ export default function MatchForm({
   const [result, setResult] = useState<MatchResult>(initial?.result ?? 'win')
   const [score, setScore] = useState(initial?.score ?? '')
   const [notes, setNotes] = useState(initial?.notes ?? '')
-  const [practiceValues, setPracticeValues] = useState<Record<PracticeFieldKey, string>>(
-    () => Object.fromEntries(PRACTICE_BOX1.map((k) => [k, initial?.extra?.[k] ?? ''])) as Record<PracticeFieldKey, string>
-  )
   const [resourceValues, setResourceValues] = useState<Record<ResourceField, ResourceRating>>(() =>
     Object.fromEntries(
       RESOURCE_FIELDS.map((k) => {
@@ -61,7 +56,6 @@ export default function MatchForm({
     return Object.fromEntries(PRACTICE_DYN_SECTIONS.map((s) => [s, init(s)])) as Record<PracticeDynSection, ExtraField[]>
   })
   const allReservedKeys = [
-    ...PRACTICE_BOX1,
     ...PRACTICE_DYN_SECTIONS,
     ...RESOURCE_FIELDS.map((k) => `RM_${k}`),
   ] as readonly string[]
@@ -102,9 +96,6 @@ export default function MatchForm({
     try {
       const extra: Record<string, string> = {}
       if (isPractice) {
-        for (const k of PRACTICE_BOX1) {
-          if (practiceValues[k].trim()) extra[k] = practiceValues[k].trim()
-        }
         for (const k of RESOURCE_FIELDS) {
           const v = resourceValues[k]
           const parts = [v.good ? 'Good' : '', v.bad ? 'Bad' : ''].filter(Boolean)
@@ -255,18 +246,6 @@ export default function MatchForm({
           <>
             <div className="rounded-lg border border-amber-200 bg-amber-50/60 px-4 py-3 space-y-3">
               <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide">ข้อมูลการPractise</p>
-              {PRACTICE_BOX1.map((field) => (
-                <div key={field}>
-                  <label className="block text-sm font-medium text-amber-900 mb-1">{field}</label>
-                  <input
-                    type="text"
-                    value={practiceValues[field]}
-                    onChange={(e) => setPracticeValues((v) => ({ ...v, [field]: e.target.value }))}
-                    className="w-full rounded-md border border-amber-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
-                    placeholder={field}
-                  />
-                </div>
-              ))}
               {PRACTICE_DYN_SECTIONS.map((sec) => (
                 <div key={sec} className="space-y-2">
                   <div className="flex items-center justify-between">
