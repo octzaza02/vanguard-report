@@ -5,7 +5,7 @@ import type { Match, MatchResult } from '@/lib/types'
 
 const RESULT_LABELS: Record<MatchResult, string> = { win: 'ชนะ', loss: 'แพ้', draw: 'เสมอ' }
 
-const PRACTICE_SECTIONS = ['Mulligan', 'Turn Counts', 'Misplays', 'Turning Point', 'Death Cards'] as const
+const PRACTICE_SECTIONS = ['Mulligan', 'บันทึกการเล่น', 'Misplays', 'Turning Point', 'Death Cards'] as const
 const MULLIGAN_SUBS = ['มือแรก', 'การ์ดที่เปลี่ยน', 'การ์ดที่ได้'] as const
 
 // Keys in the order they appear in the match form (practice mode)
@@ -30,7 +30,7 @@ function getPracticeData(m: Match): { sec: string; items: string[] }[] {
   }
 
   // Other practice sections
-  for (const sec of ['Turn Counts', 'Misplays', 'Turning Point', 'Death Cards'] as const) {
+  for (const sec of ['บันทึกการเล่น', 'Misplays', 'Turning Point', 'Death Cards'] as const) {
     const prefix = `${sec}::`
     const items = Object.entries(m.extra ?? {})
       .filter(([k]) => k.startsWith(prefix))

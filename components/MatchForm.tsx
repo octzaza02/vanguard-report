@@ -15,7 +15,7 @@ type ExtraField = { key: string; value: string }
 
 const MULLIGAN_SUBS = ['มือแรก', 'การ์ดที่เปลี่ยน', 'การ์ดที่ได้'] as const
 type MulliganSub = (typeof MULLIGAN_SUBS)[number]
-const PRACTICE_DYN_SECTIONS = ['Turn Counts', 'Misplays', 'Turning Point', 'Death Cards'] as const
+const PRACTICE_DYN_SECTIONS = ['บันทึกการเล่น', 'Misplays', 'Turning Point', 'Death Cards'] as const
 type PracticeDynSection = (typeof PRACTICE_DYN_SECTIONS)[number]
 const SINGLE_INPUT_SECTIONS: readonly string[] = ['Misplays', 'Turning Point']
 const RESOURCE_FIELDS = ['Counter Blast', 'Soul', 'Energy', 'Damage Denial', 'Shield Value'] as const
@@ -364,14 +364,14 @@ export default function MatchForm({
                           type="text"
                           value={f.key}
                           onChange={(e) => updatePracticeDynField(sec, idx, { key: e.target.value })}
-                          placeholder={sec === 'Turn Counts' ? 'เทิร์นที่' : 'Card Code'}
+                          placeholder={sec === 'บันทึกการเล่น' ? 'เทิร์นที่' : 'Card Code'}
                           className="w-1/3 rounded-md border border-amber-300 bg-white px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
                         />
                         <input
                           type="text"
                           value={f.value}
                           onChange={(e) => updatePracticeDynField(sec, idx, { value: e.target.value })}
-                          placeholder={sec === 'Turn Counts' ? 'notes' : 'Card Name'}
+                          placeholder={sec === 'บันทึกการเล่น' ? 'notes' : 'Card Name'}
                           className="flex-1 rounded-md border border-amber-300 bg-white px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
                         />
                         <button
