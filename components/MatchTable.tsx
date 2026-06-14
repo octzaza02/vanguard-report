@@ -6,6 +6,7 @@ import type { Match, MatchResult } from '@/lib/types'
 const RESULT_LABELS: Record<MatchResult, string> = { win: 'ชนะ', loss: 'แพ้', draw: 'เสมอ' }
 
 const PRACTICE_SECTIONS = ['Mulligan', 'Turn Counts', 'Misplays', 'Turning Point', 'Death Cards'] as const
+const MULLIGAN_SUBS = ['มือแรก', 'การ์ดที่เปลี่ยน', 'การ์ดที่ได้'] as const
 
 // Keys in the order they appear in the match form (practice mode)
 const EXTRA_KEY_ORDER = [
@@ -17,13 +18,27 @@ const EXTRA_KEY_ORDER = [
 ]
 
 function getPracticeData(m: Match): { sec: string; items: string[] }[] {
-  return PRACTICE_SECTIONS.flatMap((sec) => {
+  const result: { sec: string; items: string[] }[] = []
+
+  // Mulligan — grouped by sub-section
+  for (const sub of MULLIGAN_SUBS) {
+    const prefix = `Mulligan::${sub}::`
+    const items = Object.keys(m.extra ?? {})
+      .filter((k) => k.startsWith(prefix))
+      .map((k) => k.slice(prefix.length))
+    if (items.length > 0) result.push({ sec: `Mulligan · ${sub}`, items })
+  }
+
+  // Other practice sections
+  for (const sec of ['Turn Counts', 'Misplays', 'Turning Point', 'Death Cards'] as const) {
     const prefix = `${sec}::`
     const items = Object.entries(m.extra ?? {})
       .filter(([k]) => k.startsWith(prefix))
       .map(([k, v]) => (v ? `${k.slice(prefix.length)}: ${v}` : k.slice(prefix.length)))
-    return items.length > 0 ? [{ sec, items }] : []
-  })
+    if (items.length > 0) result.push({ sec, items })
+  }
+
+  return result
 }
 const RESULT_BADGE: Record<MatchResult, string> = {
   win: 'bg-amber-100 text-amber-950',

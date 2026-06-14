@@ -13,9 +13,11 @@ function todayISO() {
 
 type ExtraField = { key: string; value: string }
 
-const PRACTICE_DYN_SECTIONS = ['Mulligan', 'Turn Counts', 'Misplays', 'Turning Point', 'Death Cards'] as const
+const MULLIGAN_SUBS = ['มือแรก', 'การ์ดที่เปลี่ยน', 'การ์ดที่ได้'] as const
+type MulliganSub = (typeof MULLIGAN_SUBS)[number]
+const PRACTICE_DYN_SECTIONS = ['Turn Counts', 'Misplays', 'Turning Point', 'Death Cards'] as const
 type PracticeDynSection = (typeof PRACTICE_DYN_SECTIONS)[number]
-const SINGLE_INPUT_SECTIONS: readonly string[] = ['Mulligan', 'Misplays', 'Turning Point']
+const SINGLE_INPUT_SECTIONS: readonly string[] = ['Misplays', 'Turning Point']
 const RESOURCE_FIELDS = ['Counter Blast', 'Soul', 'Energy', 'Damage Denial', 'Shield Value'] as const
 type ResourceField = (typeof RESOURCE_FIELDS)[number]
 type ResourceRating = { good: boolean; bad: boolean }
@@ -52,6 +54,18 @@ export default function MatchForm({
       })
     ) as Record<ResourceField, ResourceRating>
   )
+  const [mulliganSubFields, setMulliganSubFields] = useState<Record<MulliganSub, string[]>>(() =>
+    Object.fromEntries(
+      MULLIGAN_SUBS.map((sub) => {
+        if (!initial?.extra) return [sub, []]
+        const prefix = `Mulligan::${sub}::`
+        const items = Object.keys(initial.extra)
+          .filter((k) => k.startsWith(prefix))
+          .map((k) => k.slice(prefix.length))
+        return [sub, items]
+      })
+    ) as Record<MulliganSub, string[]>
+  )
   const [practiceDynFields, setPracticeDynFields] = useState<Record<PracticeDynSection, ExtraField[]>>(() =>
     Object.fromEntries(
       PRACTICE_DYN_SECTIONS.map((sec) => {
@@ -71,6 +85,7 @@ export default function MatchForm({
       ? Object.entries(initial.extra)
           .filter(([key]) => {
             if (RESOURCE_FIELDS.some((k) => key === `RM_${k}`)) return false
+            if (key.startsWith('Mulligan::')) return false
             if (PRACTICE_DYN_SECTIONS.some((sec) => key.startsWith(`${sec}::`))) return false
             if (key === 'WinLoseSummary' || key === 'NextStrategy') return false
             return true
@@ -80,6 +95,16 @@ export default function MatchForm({
   )
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+
+  function addMulliganItem(sub: MulliganSub) {
+    setMulliganSubFields((prev) => ({ ...prev, [sub]: [...prev[sub], ''] }))
+  }
+  function updateMulliganItem(sub: MulliganSub, idx: number, val: string) {
+    setMulliganSubFields((prev) => ({ ...prev, [sub]: prev[sub].map((v, i) => (i === idx ? val : v)) }))
+  }
+  function removeMulliganItem(sub: MulliganSub, idx: number) {
+    setMulliganSubFields((prev) => ({ ...prev, [sub]: prev[sub].filter((_, i) => i !== idx) }))
+  }
 
   function addPracticeDynField(sec: PracticeDynSection) {
     setPracticeDynFields((prev) => ({ ...prev, [sec]: [...prev[sec], { key: '', value: '' }] }))
@@ -112,6 +137,11 @@ export default function MatchForm({
           const v = resourceValues[k]
           const parts = [v.good ? 'Good' : '', v.bad ? 'Bad' : ''].filter(Boolean)
           if (parts.length > 0) extra[`RM_${k}`] = parts.join(', ')
+        }
+        for (const sub of MULLIGAN_SUBS) {
+          for (const item of mulliganSubFields[sub]) {
+            if (item.trim()) extra[`Mulligan::${sub}::${item.trim()}`] = ''
+          }
         }
         for (const sec of PRACTICE_DYN_SECTIONS) {
           for (const f of practiceDynFields[sec]) {
@@ -260,6 +290,44 @@ export default function MatchForm({
           <>
             <div className="rounded-lg border border-amber-200 bg-amber-50/60 px-4 py-3 space-y-3">
               <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide">ข้อมูลการPractise</p>
+
+              {/* Mulligan — three fixed sub-sections */}
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-amber-900">Mulligan</p>
+                {MULLIGAN_SUBS.map((sub) => (
+                  <div key={sub} className="ml-3 space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-semibold text-amber-700">{sub}</p>
+                      <button
+                        type="button"
+                        onClick={() => addMulliganItem(sub)}
+                        className="text-xs text-amber-600 underline hover:text-amber-950"
+                      >
+                        + เพิ่มฟิลด์
+                      </button>
+                    </div>
+                    {mulliganSubFields[sub].map((val, idx) => (
+                      <div key={idx} className="flex gap-2">
+                        <input
+                          type="text"
+                          value={val}
+                          onChange={(e) => updateMulliganItem(sub, idx, e.target.value)}
+                          placeholder="กรอกข้อมูล"
+                          className="flex-1 rounded-md border border-amber-300 bg-white px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeMulliganItem(sub, idx)}
+                          className="px-2 text-amber-500 hover:text-red-600"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+
               {PRACTICE_DYN_SECTIONS.map((sec) => (
                 <div key={sec} className="space-y-2">
                   <div className="flex items-center justify-between">
