@@ -101,12 +101,19 @@ const DIVIDER_GAP = 40         // space between divider and body content
 
 const COMP_NAME_LINE_H = 68
 const COMP_NAME_BLOCK = COMP_NAME_LINE_H * 2 + 8   // reserve 2 lines
-const STAT_CELL_H = 124
-const STATS_BOTTOM_GAP = 32
-const PIE_RADIUS = 66
-const PIE_TOP_GAP = 36
-const PIE_SECTION_H = PIE_RADIUS * 2 + PIE_TOP_GAP + 28
-const LEFT_COL_BODY_H = COMP_NAME_BLOCK + STAT_CELL_H + STATS_BOTTOM_GAP + PIE_SECTION_H
+
+// Combined section: large pie on the left, 2×2 stat grid on the right
+const PIE_RADIUS = 112
+const PIE_AREA_W = PIE_RADIUS * 2 + 40          // pie diameter + right margin
+const STAT_AREA_W = LEFT_W - PIE_AREA_W         // remaining width for stat cells
+const STAT_COLS = 2
+const STAT_ROWS = 2
+const STAT_GAP = 16
+const STAT_CELL_W = (STAT_AREA_W - STAT_GAP * (STAT_COLS - 1)) / STAT_COLS
+const STAT_CELL_H = 112
+const COMBINED_H = STAT_ROWS * STAT_CELL_H + (STAT_ROWS - 1) * STAT_GAP  // 240
+const COMBINED_TOP_GAP = 32
+const LEFT_COL_BODY_H = COMP_NAME_BLOCK + COMBINED_TOP_GAP + COMBINED_H + 24
 
 const DECK_IMG_H = RIGHT_W     // square deck image
 const DECK_NAME_H = 56         // deck name text below image
@@ -190,49 +197,17 @@ export async function buildCompetitionShareImage(
   ctx.font = '700 54px system-ui, "Noto Sans Thai", sans-serif'
   wrapText(ctx, competition.name, leftX, bodyTop, LEFT_W, COMP_NAME_LINE_H, 2)
 
-  // LEFT: Stats (4 cells — total, win, loss, draw)
-  const statsY = bodyTop + COMP_NAME_BLOCK
+  // LEFT: Combined section — large donut pie (left) + 2×2 stat cells (right)
+  const combinedTop = bodyTop + COMP_NAME_BLOCK + COMBINED_TOP_GAP
   const total = matches.length
   const wins = matches.filter((m) => m.result === 'win').length
   const losses = matches.filter((m) => m.result === 'loss').length
   const draws = matches.filter((m) => m.result === 'draw').length
   const winRate = total > 0 ? Math.round((wins / total) * 100) : 0
 
-  const stats = [
-    { label: 'แข่งทั้งหมด', value: String(total), color: COLORS.title },
-    { label: 'ชนะ', value: String(wins), color: COLORS.win },
-    { label: 'แพ้', value: String(losses), color: COLORS.loss },
-    { label: 'เสมอ', value: String(draws), color: COLORS.draw },
-  ]
-  const statGap = 16
-  const statCellW = (LEFT_W - statGap * (stats.length - 1)) / stats.length
-
-  stats.forEach((s, i) => {
-    const sx = leftX + i * (statCellW + statGap)
-
-    ctx.fillStyle = COLORS.cardBg
-    roundRect(ctx, sx, statsY, statCellW, STAT_CELL_H, 14)
-    ctx.fill()
-    ctx.strokeStyle = COLORS.border
-    ctx.lineWidth = 2
-    roundRect(ctx, sx, statsY, statCellW, STAT_CELL_H, 14)
-    ctx.stroke()
-
-    ctx.fillStyle = s.color
-    ctx.font = '700 44px system-ui, "Noto Sans Thai", sans-serif'
-    ctx.textAlign = 'center'
-    ctx.fillText(s.value, sx + statCellW / 2, statsY + 60)
-
-    ctx.fillStyle = COLORS.dim
-    ctx.font = '400 22px system-ui, "Noto Sans Thai", sans-serif'
-    ctx.fillText(s.label, sx + statCellW / 2, statsY + 96)
-    ctx.textAlign = 'left'
-  })
-
-  // LEFT: Pie (donut) chart + legend
-  const pieTopY = statsY + STAT_CELL_H + PIE_TOP_GAP
-  const pieCX = leftX + PIE_RADIUS + 8
-  const pieCY = pieTopY + PIE_RADIUS
+  // Pie chart — vertically centred inside COMBINED_H
+  const pieCX = leftX + PIE_RADIUS + 4
+  const pieCY = combinedTop + COMBINED_H / 2
   const pieSlices = [
     { value: wins,   color: COLORS.win,  label: 'ชนะ' },
     { value: losses, color: COLORS.loss, label: 'แพ้' },
@@ -255,13 +230,16 @@ export async function buildCompetitionShareImage(
     // Donut hole
     ctx.fillStyle = COLORS.bg
     ctx.beginPath()
-    ctx.arc(pieCX, pieCY, PIE_RADIUS * 0.46, 0, Math.PI * 2)
+    ctx.arc(pieCX, pieCY, PIE_RADIUS * 0.44, 0, Math.PI * 2)
     ctx.fill()
-    // Win rate in centre
-    ctx.fillStyle = COLORS.win
-    ctx.font = '700 24px system-ui, "Noto Sans Thai", sans-serif'
+    // Win% in centre — two lines: number + label
     ctx.textAlign = 'center'
-    ctx.fillText(`${winRate}%`, pieCX, pieCY + 9)
+    ctx.fillStyle = COLORS.win
+    ctx.font = `700 ${Math.round(PIE_RADIUS * 0.38)}px system-ui, "Noto Sans Thai", sans-serif`
+    ctx.fillText(`${winRate}%`, pieCX, pieCY + 6)
+    ctx.fillStyle = COLORS.dim
+    ctx.font = `400 ${Math.round(PIE_RADIUS * 0.18)}px system-ui, "Noto Sans Thai", sans-serif`
+    ctx.fillText('อัตราชนะ', pieCX, pieCY + PIE_RADIUS * 0.42)
     ctx.textAlign = 'left'
   } else {
     ctx.strokeStyle = COLORS.border
@@ -271,25 +249,38 @@ export async function buildCompetitionShareImage(
     ctx.stroke()
   }
 
-  // Legend beside the pie
-  const legX = pieCX + PIE_RADIUS + 32
-  const legStartY = pieCY - (pieSlices.length - 1) * 25
-  pieSlices.forEach((s, i) => {
-    const ly = legStartY + i * 52
-    // Colour dot
-    ctx.fillStyle = s.color
-    ctx.beginPath()
-    ctx.arc(legX + 10, ly, 10, 0, Math.PI * 2)
+  // 2×2 stat cells — to the right of the pie
+  const statGridX = leftX + PIE_AREA_W
+  const stats = [
+    { label: 'แข่งทั้งหมด', value: String(total), color: COLORS.title },
+    { label: 'ชนะ',         value: String(wins),   color: COLORS.win },
+    { label: 'แพ้',          value: String(losses), color: COLORS.loss },
+    { label: 'เสมอ',         value: String(draws),  color: COLORS.draw },
+  ]
+
+  stats.forEach((s, i) => {
+    const col = i % STAT_COLS
+    const row = Math.floor(i / STAT_COLS)
+    const sx = statGridX + col * (STAT_CELL_W + STAT_GAP)
+    const sy = combinedTop + row * (STAT_CELL_H + STAT_GAP)
+
+    ctx.fillStyle = COLORS.cardBg
+    roundRect(ctx, sx, sy, STAT_CELL_W, STAT_CELL_H, 14)
     ctx.fill()
-    // Label + count
-    ctx.fillStyle = COLORS.title
-    ctx.font = '600 26px system-ui, "Noto Sans Thai", sans-serif'
-    ctx.fillText(`${s.label}  ${s.value}`, legX + 28, ly + 9)
-    // Percentage
-    const pct = total > 0 ? Math.round((s.value / total) * 100) : 0
+    ctx.strokeStyle = COLORS.border
+    ctx.lineWidth = 2
+    roundRect(ctx, sx, sy, STAT_CELL_W, STAT_CELL_H, 14)
+    ctx.stroke()
+
+    ctx.fillStyle = s.color
+    ctx.font = '700 42px system-ui, "Noto Sans Thai", sans-serif'
+    ctx.textAlign = 'center'
+    ctx.fillText(s.value, sx + STAT_CELL_W / 2, sy + 56)
+
     ctx.fillStyle = COLORS.dim
     ctx.font = '400 22px system-ui, "Noto Sans Thai", sans-serif'
-    ctx.fillText(`${pct}%`, legX + 180, ly + 9)
+    ctx.fillText(s.label, sx + STAT_CELL_W / 2, sy + 88)
+    ctx.textAlign = 'left'
   })
 
   // RIGHT: Deck image
