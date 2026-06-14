@@ -15,12 +15,12 @@ type ExtraField = { key: string; value: string }
 
 const PRACTICE_BOX1 = ['Mulligan', 'Turn Counts'] as const
 type PracticeFieldKey = (typeof PRACTICE_BOX1)[number]
-const PRACTICE_DYN_SECTIONS = ['Misplays', 'Turning Point'] as const
+const PRACTICE_DYN_SECTIONS = ['Misplays', 'Turning Point', 'Death Cards'] as const
 type PracticeDynSection = (typeof PRACTICE_DYN_SECTIONS)[number]
 const RESOURCE_FIELDS = ['Counter Blast', 'Soul', 'Energy', 'Damage Denial', 'Shield Value'] as const
 type ResourceField = (typeof RESOURCE_FIELDS)[number]
 type ResourceRating = { good: boolean; bad: boolean }
-const DECK_CHANGE_SECTIONS = ['Death Cards', 'Cards In', 'Cards Out'] as const
+const DECK_CHANGE_SECTIONS = ['Cards In', 'Cards Out'] as const
 type DeckSection = (typeof DECK_CHANGE_SECTIONS)[number]
 
 export default function MatchForm({
