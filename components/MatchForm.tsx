@@ -15,6 +15,7 @@ type ExtraField = { key: string; value: string }
 
 const PRACTICE_DYN_SECTIONS = ['Mulligan', 'Turn Counts', 'Misplays', 'Turning Point', 'Death Cards'] as const
 type PracticeDynSection = (typeof PRACTICE_DYN_SECTIONS)[number]
+const SINGLE_INPUT_SECTIONS: readonly string[] = ['Mulligan', 'Misplays', 'Turning Point']
 const RESOURCE_FIELDS = ['Counter Blast', 'Soul', 'Energy', 'Damage Denial', 'Shield Value'] as const
 type ResourceField = (typeof RESOURCE_FIELDS)[number]
 type ResourceRating = { good: boolean; bad: boolean }
@@ -258,31 +259,50 @@ export default function MatchForm({
                       + เพิ่มฟิลด์
                     </button>
                   </div>
-                  {practiceDynFields[sec].map((f, idx) => (
-                    <div key={idx} className="flex gap-2">
-                      <input
-                        type="text"
-                        value={f.key}
-                        onChange={(e) => updatePracticeDynField(sec, idx, { key: e.target.value })}
-                        placeholder="Card Code"
-                        className="w-1/3 rounded-md border border-amber-300 bg-white px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
-                      />
-                      <input
-                        type="text"
-                        value={f.value}
-                        onChange={(e) => updatePracticeDynField(sec, idx, { value: e.target.value })}
-                        placeholder="Card Name"
-                        className="flex-1 rounded-md border border-amber-300 bg-white px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removePracticeDynField(sec, idx)}
-                        className="px-2 text-amber-500 hover:text-red-600"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ))}
+                  {practiceDynFields[sec].map((f, idx) =>
+                    SINGLE_INPUT_SECTIONS.includes(sec) ? (
+                      <div key={idx} className="flex gap-2">
+                        <input
+                          type="text"
+                          value={f.key}
+                          onChange={(e) => updatePracticeDynField(sec, idx, { key: e.target.value })}
+                          placeholder="กรอกข้อมูล"
+                          className="flex-1 rounded-md border border-amber-300 bg-white px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removePracticeDynField(sec, idx)}
+                          className="px-2 text-amber-500 hover:text-red-600"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ) : (
+                      <div key={idx} className="flex gap-2">
+                        <input
+                          type="text"
+                          value={f.key}
+                          onChange={(e) => updatePracticeDynField(sec, idx, { key: e.target.value })}
+                          placeholder="Card Code"
+                          className="w-1/3 rounded-md border border-amber-300 bg-white px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                        />
+                        <input
+                          type="text"
+                          value={f.value}
+                          onChange={(e) => updatePracticeDynField(sec, idx, { value: e.target.value })}
+                          placeholder="Card Name"
+                          className="flex-1 rounded-md border border-amber-300 bg-white px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removePracticeDynField(sec, idx)}
+                          className="px-2 text-amber-500 hover:text-red-600"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )
+                  )}
                 </div>
               ))}
             </div>
