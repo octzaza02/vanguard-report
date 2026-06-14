@@ -62,8 +62,6 @@ export default function MatchTable({
   const [resultFilter, setResultFilter] = useState<MatchResult | 'all'>('all')
   const [sortKey, setSortKey] = useState<SortKey>('round_number')
   const [sortAsc, setSortAsc] = useState(true)
-  const [expandedId, setExpandedId] = useState<string | null>(null)
-
   const filtered = useMemo(() => {
     let rows = matches
     if (resultFilter !== 'all') rows = rows.filter((m) => m.result === resultFilter)
@@ -148,20 +146,15 @@ export default function MatchTable({
             {filtered.map((m) => {
               const practiceData = getPracticeData(m)
               const hasPractice = practiceData.length > 0 || !!m.extra?.['WinLoseSummary'] || !!m.extra?.['NextStrategy']
-              const isExpanded = expandedId === m.id
               const colSpan = 7 + extraKeys.length + (isOwner ? 1 : 0)
               return (
                 <>
                   <tr
                     key={m.id}
-                    className={`border-b ${isExpanded ? '' : 'border-amber-200'} hover:bg-amber-50 ${hasPractice ? 'cursor-pointer' : ''}`}
-                    onClick={() => hasPractice && setExpandedId(isExpanded ? null : m.id)}
+                    className={`border-b ${hasPractice ? '' : 'border-amber-200'} hover:bg-amber-50`}
                   >
                     <td className="px-4 py-2 whitespace-nowrap text-amber-950 font-medium">
                       {m.round_number ?? '—'}
-                      {hasPractice && (
-                        <span className="ml-1.5 text-amber-400 text-xs">{isExpanded ? '▲' : '▼'}</span>
-                      )}
                     </td>
                     <td className="px-4 py-2 whitespace-nowrap text-amber-900">{m.match_date}</td>
                     <td className="px-4 py-2 text-amber-900">{m.opponent || '—'}</td>
@@ -181,7 +174,7 @@ export default function MatchTable({
                       <td key={k} className="px-4 py-2 text-amber-600">{m.extra?.[k] ?? '—'}</td>
                     ))}
                     {isOwner && (
-                      <td className="px-4 py-2 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                      <td className="px-4 py-2 text-right whitespace-nowrap">
                         <button onClick={() => onEdit(m)} className="text-amber-700 hover:underline mr-3">
                           แก้ไข
                         </button>
@@ -191,7 +184,7 @@ export default function MatchTable({
                       </td>
                     )}
                   </tr>
-                  {isExpanded && hasPractice && (
+                  {hasPractice && (
                     <tr key={`${m.id}-detail`} className="border-b border-amber-200 bg-amber-50/60">
                       <td colSpan={colSpan} className="px-6 py-3 space-y-3">
                         <p className="text-xs font-semibold text-amber-600 uppercase tracking-wide">ข้อมูลการ Practise</p>
