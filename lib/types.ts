@@ -15,6 +15,7 @@ export type Competition = {
   category: string | null
   decklog: string | null
   decklog_image: string | null
+  notes: string | null
   created_at: string
 }
 
