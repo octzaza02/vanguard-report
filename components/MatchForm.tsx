@@ -291,14 +291,14 @@ export default function MatchForm({
                           type="text"
                           value={f.key}
                           onChange={(e) => updatePracticeDynField(sec, idx, { key: e.target.value })}
-                          placeholder="Card Code"
+                          placeholder={sec === 'Turn Counts' ? 'เทิร์นที่' : 'Card Code'}
                           className="w-1/3 rounded-md border border-amber-300 bg-white px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
                         />
                         <input
                           type="text"
                           value={f.value}
                           onChange={(e) => updatePracticeDynField(sec, idx, { value: e.target.value })}
-                          placeholder="Card Name"
+                          placeholder={sec === 'Turn Counts' ? 'notes' : 'Card Name'}
                           className="flex-1 rounded-md border border-amber-300 bg-white px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
                         />
                         <button
