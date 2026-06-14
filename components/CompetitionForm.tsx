@@ -8,10 +8,63 @@ import { resizeToDataUrl } from '@/lib/image'
 
 const MAX_DECKLOG_DIM = 480
 
-type AttachmentDraft = { image: string | null; note: string }
+type DeckRow = { key: string; value: string }
+type AttachmentDraft = { image: string | null; note: string; cardsIn: DeckRow[]; cardsOut: DeckRow[] }
 
 function emptyAttachment(): AttachmentDraft {
-  return { image: null, note: '' }
+  return { image: null, note: '', cardsIn: [], cardsOut: [] }
+}
+
+function seedAttachment(a: Partial<AttachmentDraft>): AttachmentDraft {
+  return { image: a.image ?? null, note: a.note ?? '', cardsIn: a.cardsIn ?? [], cardsOut: a.cardsOut ?? [] }
+}
+
+function DeckSection({
+  label,
+  rows,
+  onChange,
+}: {
+  label: string
+  rows: DeckRow[]
+  onChange: (rows: DeckRow[]) => void
+}) {
+  function addRow() { onChange([...rows, { key: '', value: '' }]) }
+  function updateRow(idx: number, patch: Partial<DeckRow>) {
+    onChange(rows.map((r, i) => (i === idx ? { ...r, ...patch } : r)))
+  }
+  function removeRow(idx: number) { onChange(rows.filter((_, i) => i !== idx)) }
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-medium text-amber-900">{label}</p>
+        <button type="button" onClick={addRow} className="text-xs text-amber-600 underline hover:text-amber-950">
+          + เพิ่มฟิลด์
+        </button>
+      </div>
+      {rows.map((r, idx) => (
+        <div key={idx} className="flex gap-2">
+          <input
+            type="text"
+            value={r.key}
+            onChange={(e) => updateRow(idx, { key: e.target.value })}
+            placeholder="Card Code"
+            className="w-1/3 rounded-md border border-amber-300 bg-white px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+          />
+          <input
+            type="text"
+            value={r.value}
+            onChange={(e) => updateRow(idx, { value: e.target.value })}
+            placeholder="Card Name"
+            className="flex-1 rounded-md border border-amber-300 bg-white px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+          />
+          <button type="button" onClick={() => removeRow(idx)} className="px-2 text-amber-500 hover:text-red-600">
+            ✕
+          </button>
+        </div>
+      ))}
+    </div>
+  )
 }
 
 export default function CompetitionForm({
@@ -27,10 +80,10 @@ export default function CompetitionForm({
   const [category, setCategory] = useState(initial?.category ?? '')
   const [decklog, setDecklog] = useState(initial?.decklog ?? '')
 
-  // Seed attachments from DB: prefer attachments array, fall back to legacy decklog_image+notes
   const [attachments, setAttachments] = useState<AttachmentDraft[]>(() => {
-    if (initial?.attachments && initial.attachments.length > 0) return initial.attachments
-    return [{ image: initial?.decklog_image ?? null, note: initial?.notes ?? '' }]
+    if (initial?.attachments && initial.attachments.length > 0)
+      return initial.attachments.map(seedAttachment)
+    return [seedAttachment({ image: initial?.decklog_image, note: initial?.notes ?? '' })]
   })
 
   const [error, setError] = useState<string | null>(null)
@@ -40,7 +93,6 @@ export default function CompetitionForm({
   function updateAttachment(idx: number, patch: Partial<AttachmentDraft>) {
     setAttachments((prev) => prev.map((a, i) => (i === idx ? { ...a, ...patch } : a)))
   }
-
   function removeAttachment(idx: number) {
     setAttachments((prev) => prev.filter((_, i) => i !== idx))
   }
@@ -48,10 +100,7 @@ export default function CompetitionForm({
   async function handleFile(idx: number, e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    if (!file.type.startsWith('image/')) {
-      alert('กรุณาเลือกไฟล์รูปภาพ')
-      return
-    }
+    if (!file.type.startsWith('image/')) { alert('กรุณาเลือกไฟล์รูปภาพ'); return }
     try {
       const dataUrl = await resizeToDataUrl(file, MAX_DECKLOG_DIM, 0.85)
       updateAttachment(idx, { image: dataUrl })
@@ -66,21 +115,13 @@ export default function CompetitionForm({
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     setError(null)
-    if (!name.trim()) {
-      setError('กรุณากรอกชื่องานแข่ง')
-      return
-    }
+    if (!name.trim()) { setError('กรุณากรอกชื่องานแข่ง'); return }
     setSaving(true)
     try {
-      // Keep legacy fields in sync with first attachment for backward compat
       const first = attachments[0] ?? emptyAttachment()
       await onSubmit({
-        name: name.trim(),
-        game: '',
-        category,
-        decklog,
-        decklogImage: first.image,
-        notes: first.note,
+        name: name.trim(), game: '', category, decklog,
+        decklogImage: first.image, notes: first.note,
         attachments,
       })
       onClose()
@@ -135,7 +176,6 @@ export default function CompetitionForm({
           />
         </div>
 
-        {/* Dynamic attachment boxes */}
         {attachments.map((att, idx) => (
           <div key={idx} className="rounded-lg border border-amber-200 bg-amber-50/50 p-3 space-y-3">
             <div className="flex items-center justify-between">
@@ -153,6 +193,7 @@ export default function CompetitionForm({
               )}
             </div>
 
+            {/* Image */}
             {att.image && (
               <div className="flex items-start gap-3">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -170,7 +211,6 @@ export default function CompetitionForm({
                 </button>
               </div>
             )}
-
             <div>
               <label className="block text-xs font-medium text-amber-600 mb-1">แนบรูป (ถ้ามี)</label>
               <input
@@ -183,7 +223,23 @@ export default function CompetitionForm({
               <p className="text-xs text-amber-500 mt-1">รูปจะถูกย่อขนาดอัตโนมัติก่อนบันทึก</p>
             </div>
 
-            <div>
+            {/* DECKS CHANGE */}
+            <div className="border-t border-amber-200 pt-3 space-y-3">
+              <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide">Decks Change</p>
+              <DeckSection
+                label="Cards In"
+                rows={att.cardsIn}
+                onChange={(rows) => updateAttachment(idx, { cardsIn: rows })}
+              />
+              <DeckSection
+                label="Cards Out"
+                rows={att.cardsOut}
+                onChange={(rows) => updateAttachment(idx, { cardsOut: rows })}
+              />
+            </div>
+
+            {/* Note */}
+            <div className="border-t border-amber-200 pt-3">
               <label className="block text-sm font-medium text-amber-900 mb-1">Note</label>
               <textarea
                 value={att.note}

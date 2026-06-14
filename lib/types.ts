@@ -7,9 +7,13 @@ export type User = {
   created_at: string
 }
 
+export type DeckRow = { key: string; value: string }
+
 export type Attachment = {
   image: string | null
   note: string
+  cardsIn: DeckRow[]
+  cardsOut: DeckRow[]
 }
 
 export type Competition = {

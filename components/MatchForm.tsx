@@ -20,8 +20,6 @@ type PracticeDynSection = (typeof PRACTICE_DYN_SECTIONS)[number]
 const RESOURCE_FIELDS = ['Counter Blast', 'Soul', 'Energy', 'Damage Denial', 'Shield Value'] as const
 type ResourceField = (typeof RESOURCE_FIELDS)[number]
 type ResourceRating = { good: boolean; bad: boolean }
-const DECK_CHANGE_SECTIONS = ['Cards In', 'Cards Out'] as const
-type DeckSection = (typeof DECK_CHANGE_SECTIONS)[number]
 
 export default function MatchForm({
   initial,
@@ -62,20 +60,10 @@ export default function MatchForm({
     const init = (sec: PracticeDynSection): ExtraField[] => []
     return Object.fromEntries(PRACTICE_DYN_SECTIONS.map((s) => [s, init(s)])) as Record<PracticeDynSection, ExtraField[]>
   })
-  const [deckSectionFields, setDeckSectionFields] = useState<Record<DeckSection, ExtraField[]>>(() => {
-    const init = (sec: DeckSection): ExtraField[] => {
-      if (initial?.extra && sec in initial.extra) {
-        return [{ key: sec, value: String(initial.extra[sec]) }]
-      }
-      return []
-    }
-    return Object.fromEntries(DECK_CHANGE_SECTIONS.map((s) => [s, init(s)])) as Record<DeckSection, ExtraField[]>
-  })
   const allReservedKeys = [
     ...PRACTICE_BOX1,
     ...PRACTICE_DYN_SECTIONS,
     ...RESOURCE_FIELDS.map((k) => `RM_${k}`),
-    ...DECK_CHANGE_SECTIONS,
   ] as readonly string[]
   const [extraFields, setExtraFields] = useState<ExtraField[]>(
     initial?.extra
@@ -95,16 +83,6 @@ export default function MatchForm({
   }
   function removePracticeDynField(sec: PracticeDynSection, idx: number) {
     setPracticeDynFields((prev) => ({ ...prev, [sec]: prev[sec].filter((_, i) => i !== idx) }))
-  }
-
-  function addDeckField(sec: DeckSection) {
-    setDeckSectionFields((prev) => ({ ...prev, [sec]: [...prev[sec], { key: '', value: '' }] }))
-  }
-  function updateDeckField(sec: DeckSection, idx: number, patch: Partial<ExtraField>) {
-    setDeckSectionFields((prev) => ({ ...prev, [sec]: prev[sec].map((f, i) => (i === idx ? { ...f, ...patch } : f)) }))
-  }
-  function removeDeckField(sec: DeckSection, idx: number) {
-    setDeckSectionFields((prev) => ({ ...prev, [sec]: prev[sec].filter((_, i) => i !== idx) }))
   }
 
   function addExtraField() {
@@ -134,11 +112,6 @@ export default function MatchForm({
         }
         for (const sec of PRACTICE_DYN_SECTIONS) {
           for (const f of practiceDynFields[sec]) {
-            if (f.key.trim()) extra[f.key.trim()] = f.value
-          }
-        }
-        for (const sec of DECK_CHANGE_SECTIONS) {
-          for (const f of deckSectionFields[sec]) {
             if (f.key.trim()) extra[f.key.trim()] = f.value
           }
         }
@@ -371,48 +344,6 @@ export default function MatchForm({
               </div>
             </div>
 
-            <div className="rounded-lg border border-amber-200 bg-amber-50/60 px-4 py-3 space-y-4">
-              <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide">Decks Change</p>
-              {DECK_CHANGE_SECTIONS.map((sec) => (
-                <div key={sec} className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium text-amber-900">{sec}</p>
-                    <button
-                      type="button"
-                      onClick={() => addDeckField(sec)}
-                      className="text-xs text-amber-600 underline hover:text-amber-950"
-                    >
-                      + เพิ่มฟิลด์
-                    </button>
-                  </div>
-                  {deckSectionFields[sec].map((f, idx) => (
-                    <div key={idx} className="flex gap-2">
-                      <input
-                        type="text"
-                        value={f.key}
-                        onChange={(e) => updateDeckField(sec, idx, { key: e.target.value })}
-                        placeholder="Card Code"
-                        className="w-1/3 rounded-md border border-amber-300 bg-white px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
-                      />
-                      <input
-                        type="text"
-                        value={f.value}
-                        onChange={(e) => updateDeckField(sec, idx, { value: e.target.value })}
-                        placeholder="Card Name"
-                        className="flex-1 rounded-md border border-amber-300 bg-white px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeDeckField(sec, idx)}
-                        className="px-2 text-amber-500 hover:text-red-600"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              ))}
-            </div>
           </>
         )}
 
