@@ -174,36 +174,44 @@ export default function CompetitionPage({
                       </div>
                     )}
 
-                    {/* Right: note (top) → cards in → cards out */}
+                    {/* Right: [cards in/out] | [note] side by side */}
                     {(hasCards || att.note) && (
-                      <div className="min-w-0 flex-1 space-y-3 text-sm">
-                        {att.note && (
-                          <p className="text-amber-800 whitespace-pre-wrap leading-relaxed">{att.note}</p>
-                        )}
-                        {(att.cardsIn?.length ?? 0) > 0 && (
-                          <div>
-                            <p className="text-xs font-semibold text-amber-600 uppercase tracking-wide mb-1">Cards In</p>
-                            <ul className="space-y-0.5">
-                              {att.cardsIn!.map((row, i) => (
-                                <li key={i} className="flex items-start gap-2 text-amber-900">
-                                  <span className="shrink-0 w-6 text-right font-medium text-amber-700">{row.key}</span>
-                                  <span>{row.value}</span>
-                                </li>
-                              ))}
-                            </ul>
+                      <div className="min-w-0 flex-1 flex gap-6 text-sm">
+                        {/* Cards column */}
+                        {hasCards && (
+                          <div className="shrink-0 space-y-3">
+                            {(att.cardsIn?.length ?? 0) > 0 && (
+                              <div>
+                                <p className="text-xs font-semibold text-amber-600 uppercase tracking-wide mb-1">Cards In</p>
+                                <ul className="space-y-0.5">
+                                  {att.cardsIn!.map((row, i) => (
+                                    <li key={i} className="flex items-start gap-2 text-amber-900">
+                                      <span className="shrink-0 w-6 text-right font-medium text-amber-700">{row.key}</span>
+                                      <span>{row.value}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                            {(att.cardsOut?.length ?? 0) > 0 && (
+                              <div>
+                                <p className="text-xs font-semibold text-red-500 uppercase tracking-wide mb-1">Cards Out</p>
+                                <ul className="space-y-0.5">
+                                  {att.cardsOut!.map((row, i) => (
+                                    <li key={i} className="flex items-start gap-2 text-amber-900">
+                                      <span className="shrink-0 w-6 text-right font-medium text-red-500">{row.key}</span>
+                                      <span>{row.value}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
                           </div>
                         )}
-                        {(att.cardsOut?.length ?? 0) > 0 && (
-                          <div>
-                            <p className="text-xs font-semibold text-red-500 uppercase tracking-wide mb-1">Cards Out</p>
-                            <ul className="space-y-0.5">
-                              {att.cardsOut!.map((row, i) => (
-                                <li key={i} className="flex items-start gap-2 text-amber-900">
-                                  <span className="shrink-0 w-6 text-right font-medium text-red-500">{row.key}</span>
-                                  <span>{row.value}</span>
-                                </li>
-                              ))}
-                            </ul>
+                        {/* Note column */}
+                        {att.note && (
+                          <div className={`min-w-0 flex-1 ${hasCards ? 'border-l border-amber-100 pl-6' : ''}`}>
+                            <p className="text-amber-800 whitespace-pre-wrap leading-relaxed">{att.note}</p>
                           </div>
                         )}
                       </div>
