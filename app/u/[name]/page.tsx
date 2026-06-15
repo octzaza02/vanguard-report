@@ -78,7 +78,7 @@ export default function UserFolderPage({ params }: { params: Promise<{ name: str
 
   return (
     <div>
-      <div className="mb-6 flex items-start justify-between gap-4">
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="relative group">
             <FolderIcon avatar={user?.avatar} size={48} />
@@ -100,7 +100,7 @@ export default function UserFolderPage({ params }: { params: Promise<{ name: str
         {isOwner && (
           <button
             onClick={() => setShowForm(true)}
-            className="px-4 py-2 rounded-md bg-amber-600 text-white text-sm hover:bg-amber-500 transition"
+            className="w-full sm:w-auto px-4 py-2 rounded-md bg-amber-600 text-white text-sm hover:bg-amber-500 transition"
           >
             + สร้างงานแข่งใหม่
           </button>

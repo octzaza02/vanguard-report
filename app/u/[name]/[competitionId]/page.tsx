@@ -138,7 +138,7 @@ export default function CompetitionPage({
         <Link href={`/u/${encodeURIComponent(decodedName)}`} className="text-sm text-amber-600 hover:underline">
           ← {decodedName}
         </Link>
-        <div className="mt-1 flex items-start justify-between gap-4">
+        <div className="mt-1 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div className="min-w-0 flex-1">
             <h1 className="text-2xl font-semibold">{competition?.name ?? '...'}</h1>
             {competition && (
@@ -160,8 +160,8 @@ export default function CompetitionPage({
               const hasCards = (att.cardsIn?.length ?? 0) > 0 || (att.cardsOut?.length ?? 0) > 0
               return (att.image || att.note || hasCards) ? (
                 <div key={idx} className="mt-3 rounded-lg border border-amber-200 bg-white p-3">
-                  <div className="flex gap-4">
-                    {/* Left: image */}
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    {/* Image */}
                     {att.image && (
                       <div className="shrink-0">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -169,7 +169,7 @@ export default function CompetitionPage({
                           src={att.image}
                           alt="Deck"
                           onClick={() => setLightboxSrc(att.image!)}
-                          className="max-h-44 w-auto rounded-md border border-amber-300 object-contain cursor-zoom-in hover:opacity-90 transition"
+                          className="w-full max-h-64 sm:w-auto sm:max-h-44 rounded-md border border-amber-300 object-cover cursor-zoom-in hover:opacity-90 transition"
                         />
                       </div>
                     )}
@@ -222,16 +222,16 @@ export default function CompetitionPage({
 
           {/* Action buttons */}
           {isOwner && (
-            <div className="shrink-0 flex flex-col gap-2">
+            <div className="flex sm:flex-col gap-2 shrink-0">
               <button
                 onClick={() => setShowForm(true)}
-                className="px-4 py-2 rounded-md bg-amber-600 text-white text-sm hover:bg-amber-500 transition"
+                className="flex-1 sm:flex-none px-4 py-2 rounded-md bg-amber-600 text-white text-sm hover:bg-amber-500 transition text-center"
               >
                 + บันทึกแมตช์ใหม่
               </button>
               <button
                 onClick={() => setEditingComp(true)}
-                className="px-4 py-2 rounded-md border border-amber-400 text-amber-800 text-sm hover:bg-amber-50 transition"
+                className="flex-1 sm:flex-none px-4 py-2 rounded-md border border-amber-400 text-amber-800 text-sm hover:bg-amber-50 transition text-center"
               >
                 ✏️ แก้ไขงานแข่ง
               </button>
