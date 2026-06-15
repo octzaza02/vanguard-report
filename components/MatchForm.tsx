@@ -17,7 +17,7 @@ const MULLIGAN_SUBS = ['มือแรก', 'การ์ดที่เปล�
 type MulliganSub = (typeof MULLIGAN_SUBS)[number]
 const PRACTICE_DYN_SECTIONS = ['บันทึกการเล่น', 'Misplays', 'Turning Point', 'Death Cards'] as const
 type PracticeDynSection = (typeof PRACTICE_DYN_SECTIONS)[number]
-const SINGLE_INPUT_SECTIONS: readonly string[] = ['Misplays', 'Turning Point']
+const SINGLE_INPUT_SECTIONS: readonly string[] = ['Misplays', 'Turning Point', 'บันทึกการเล่น']
 const RESOURCE_FIELDS = ['Counter Blast', 'Soul', 'Energy', 'Damage Denial', 'Shield Value'] as const
 type ResourceField = (typeof RESOURCE_FIELDS)[number]
 type ResourceRating = { good: boolean; bad: boolean }
@@ -344,7 +344,7 @@ export default function MatchForm({
                           type="text"
                           value={f.key}
                           onChange={(e) => updatePracticeDynField(sec, idx, { key: e.target.value })}
-                          placeholder="กรอกข้อมูล"
+                          placeholder={sec === 'บันทึกการเล่น' ? 'บันทึก...' : 'กรอกข้อมูล'}
                           className="flex-1 rounded-md border border-amber-300 bg-white px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
                         />
                         <button
