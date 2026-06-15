@@ -7,8 +7,10 @@ import {
   listMatches,
   createMatch,
   updateMatch,
+  updateCompetition,
   deleteMatch,
   type MatchInput,
+  type CompetitionInput,
 } from '@/lib/api'
 import type { Competition, Match } from '@/lib/types'
 import { useSession } from '@/lib/session'
@@ -16,6 +18,7 @@ import StatsSummary from '@/components/StatsSummary'
 import StatsCharts from '@/components/StatsCharts'
 import MatchTable from '@/components/MatchTable'
 import MatchForm from '@/components/MatchForm'
+import CompetitionForm from '@/components/CompetitionForm'
 import {
   buildCompetitionShareCanvas,
   canvasToDataUrl,
@@ -38,6 +41,8 @@ export default function CompetitionPage({
   const [error, setError] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Match | null>(null)
+  const [editingComp, setEditingComp] = useState(false)
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null)
   const [sharing, setSharing] = useState(false)
   const [shareError, setShareError] = useState<string | null>(null)
   const [sharePreview, setSharePreview] = useState<{ previewUrl: string; baseName: string } | null>(null)
@@ -69,6 +74,13 @@ export default function CompetitionPage({
     if (!session || !editing) throw new Error('กรุณาเข้าสู่ระบบ')
     await updateMatch(session.token, editing.id, input)
     setEditing(null)
+    await reload()
+  }
+
+  async function handleUpdateCompetition(fields: CompetitionInput) {
+    if (!session || !competition) throw new Error('กรุณาเข้าสู่ระบบ')
+    await updateCompetition(session.token, competition.id, fields)
+    setEditingComp(false)
     await reload()
   }
 
@@ -127,7 +139,7 @@ export default function CompetitionPage({
           ← {decodedName}
         </Link>
         <div className="mt-1 flex items-start justify-between gap-4">
-          <div>
+          <div className="min-w-0 flex-1">
             <h1 className="text-2xl font-semibold">{competition?.name ?? '...'}</h1>
             {competition && (
               <p className="text-sm text-amber-600 mt-0.5">
@@ -137,36 +149,85 @@ export default function CompetitionPage({
             {competition && competition.decklog && (
               <p className="mt-2 text-sm text-amber-900 whitespace-pre-wrap">{competition.decklog}</p>
             )}
+
+            {/* Attachment cards */}
             {competition && (competition.attachments?.length > 0
               ? competition.attachments
               : (competition.decklog_image || competition.notes)
-                ? [{ image: competition.decklog_image, note: competition.notes ?? '' }]
+                ? [{ image: competition.decklog_image ?? null, note: competition.notes ?? '', cardsIn: [], cardsOut: [] }]
                 : []
-            ).map((att, idx) => (
-              (att.image || att.note) && (
-                <div key={idx} className="mt-3 rounded-lg border border-amber-200 bg-white p-3 space-y-2">
-                  {att.image && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={att.image}
-                      alt="Attachment"
-                      className="max-h-40 rounded-md border border-amber-300 object-contain"
-                    />
-                  )}
-                  {att.note && (
-                    <p className="text-sm text-amber-900 whitespace-pre-wrap">{att.note}</p>
-                  )}
+            ).map((att, idx) => {
+              const hasCards = (att.cardsIn?.length ?? 0) > 0 || (att.cardsOut?.length ?? 0) > 0
+              return (att.image || att.note || hasCards) ? (
+                <div key={idx} className="mt-3 rounded-lg border border-amber-200 bg-white p-3">
+                  <div className="flex gap-4">
+                    {/* Left: image */}
+                    {att.image && (
+                      <div className="shrink-0">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={att.image}
+                          alt="Deck"
+                          onClick={() => setLightboxSrc(att.image!)}
+                          className="max-h-44 w-auto rounded-md border border-amber-300 object-contain cursor-zoom-in hover:opacity-90 transition"
+                        />
+                      </div>
+                    )}
+
+                    {/* Right: cards in/out + note */}
+                    {(hasCards || att.note) && (
+                      <div className="min-w-0 flex-1 space-y-3 text-sm">
+                        {(att.cardsIn?.length ?? 0) > 0 && (
+                          <div>
+                            <p className="text-xs font-semibold text-amber-600 uppercase tracking-wide mb-1">Cards In</p>
+                            <ul className="space-y-0.5">
+                              {att.cardsIn!.map((row, i) => (
+                                <li key={i} className="flex items-start gap-2 text-amber-900">
+                                  <span className="shrink-0 w-6 text-right font-medium text-amber-700">{row.key}</span>
+                                  <span>{row.value}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {(att.cardsOut?.length ?? 0) > 0 && (
+                          <div>
+                            <p className="text-xs font-semibold text-red-500 uppercase tracking-wide mb-1">Cards Out</p>
+                            <ul className="space-y-0.5">
+                              {att.cardsOut!.map((row, i) => (
+                                <li key={i} className="flex items-start gap-2 text-amber-900">
+                                  <span className="shrink-0 w-6 text-right font-medium text-red-500">{row.key}</span>
+                                  <span>{row.value}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {att.note && (
+                          <p className="text-amber-700 whitespace-pre-wrap border-t border-amber-100 pt-2">{att.note}</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              )
-            ))}
+              ) : null
+            })}
           </div>
+
+          {/* Action buttons */}
           {isOwner && (
-            <div className="shrink-0">
+            <div className="shrink-0 flex flex-col gap-2">
               <button
                 onClick={() => setShowForm(true)}
                 className="px-4 py-2 rounded-md bg-amber-600 text-white text-sm hover:bg-amber-500 transition"
               >
                 + บันทึกแมตช์ใหม่
+              </button>
+              <button
+                onClick={() => setEditingComp(true)}
+                className="px-4 py-2 rounded-md border border-amber-400 text-amber-800 text-sm hover:bg-amber-50 transition"
+              >
+                ✏️ แก้ไขงานแข่ง
               </button>
             </div>
           )}
@@ -226,6 +287,37 @@ export default function CompetitionPage({
           onSubmit={handleUpdateMatch}
           onClose={() => setEditing(null)}
         />
+      )}
+
+      {/* Edit competition modal */}
+      {editingComp && competition && (
+        <CompetitionForm
+          initial={competition}
+          onSubmit={handleUpdateCompetition}
+          onClose={() => setEditingComp(false)}
+        />
+      )}
+
+      {/* Image lightbox */}
+      {lightboxSrc && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          onClick={() => setLightboxSrc(null)}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={lightboxSrc}
+            alt="ขยายรูป"
+            className="max-w-full max-h-full rounded-xl shadow-2xl object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <button
+            onClick={() => setLightboxSrc(null)}
+            className="absolute top-4 right-4 text-white/80 hover:text-white text-3xl leading-none"
+          >
+            ✕
+          </button>
+        </div>
       )}
 
       {sharePreview && (
