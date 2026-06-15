@@ -350,7 +350,7 @@ export default function MatchForm({
                       <button
                         type="button"
                         onClick={() => addMulliganItem(sub)}
-                        className="text-xs text-amber-600 underline hover:text-amber-950"
+                        className="rounded-md border border-amber-300 px-2 py-0.5 text-xs text-amber-600 hover:bg-amber-50 hover:border-amber-400 transition"
                       >
                         + เพิ่มฟิลด์
                       </button>
@@ -384,23 +384,32 @@ export default function MatchForm({
                   <button
                     type="button"
                     onClick={addPlayGroup}
-                    className="text-xs text-amber-600 underline hover:text-amber-950"
+                    className="rounded-md border border-amber-300 px-2 py-0.5 text-xs text-amber-600 hover:bg-amber-50 hover:border-amber-400 transition"
                   >
                     + เพิ่มฟิลด์
                   </button>
                 </div>
                 {playLog.map((group, gi) => (
-                  <div key={gi} className="flex gap-2 items-start">
-                    {/* Turn field */}
-                    <input
-                      type="text"
-                      value={group.turn}
-                      onChange={(e) => updatePlayTurn(gi, e.target.value)}
-                      placeholder="เทิร์นที่"
-                      className="w-20 shrink-0 rounded-md border border-amber-300 bg-white px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
-                    />
-                    {/* Notes column */}
-                    <div className="flex-1 space-y-1">
+                  <div key={gi} className="rounded-lg border border-amber-200 bg-white p-2 space-y-1.5">
+                    {/* Header: turn + delete group */}
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={group.turn}
+                        onChange={(e) => updatePlayTurn(gi, e.target.value)}
+                        placeholder="เทิร์นที่"
+                        className="w-24 rounded-md border border-amber-300 bg-amber-50 px-2 py-1 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removePlayGroup(gi)}
+                        className="ml-auto rounded-md border border-red-200 px-2 py-1 text-xs text-red-400 hover:bg-red-50 hover:text-red-600 transition"
+                      >
+                        ลบแถว
+                      </button>
+                    </div>
+                    {/* Notes */}
+                    <div className="space-y-1 pl-1">
                       {group.notes.map((note, ni) => (
                         <div key={ni} className="flex gap-1">
                           <input
@@ -408,7 +417,7 @@ export default function MatchForm({
                             value={note.text}
                             onChange={(e) => updatePlayNote(gi, ni, e.target.value)}
                             placeholder="บันทึก"
-                            className="flex-1 rounded-md border border-amber-300 bg-white px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                            className="flex-1 min-w-0 rounded-md border border-amber-300 bg-white px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
                           />
                           <button
                             type="button"
@@ -424,7 +433,7 @@ export default function MatchForm({
                           <button
                             type="button"
                             onClick={() => removePlayNote(gi, ni)}
-                            className="px-1.5 text-amber-400 hover:text-red-600"
+                            className="shrink-0 rounded-md border border-amber-200 px-2 py-1.5 text-amber-400 hover:border-red-300 hover:text-red-500 transition text-xs"
                           >
                             ✕
                           </button>
@@ -433,19 +442,11 @@ export default function MatchForm({
                       <button
                         type="button"
                         onClick={() => addPlayNote(gi)}
-                        className="text-xs text-amber-500 hover:text-amber-800"
+                        className="text-xs text-amber-500 hover:text-amber-800 pl-1"
                       >
                         + เพิ่มบันทึก
                       </button>
                     </div>
-                    {/* Remove group */}
-                    <button
-                      type="button"
-                      onClick={() => removePlayGroup(gi)}
-                      className="mt-1.5 px-1.5 text-amber-400 hover:text-red-600 text-sm shrink-0"
-                    >
-                      ✕
-                    </button>
                   </div>
                 ))}
               </div>
@@ -457,7 +458,7 @@ export default function MatchForm({
                     <button
                       type="button"
                       onClick={() => addPracticeDynField(sec)}
-                      className="text-xs text-amber-600 underline hover:text-amber-950"
+                      className="rounded-md border border-amber-300 px-2 py-0.5 text-xs text-amber-600 hover:bg-amber-50 hover:border-amber-400 transition"
                     >
                       + เพิ่มฟิลด์
                     </button>
