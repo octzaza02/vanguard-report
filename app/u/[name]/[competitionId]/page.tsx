@@ -174,19 +174,18 @@ export default function CompetitionPage({
                       </div>
                     )}
 
-                    {/* Right: [cards in/out] | [note] side by side */}
+                    {/* Right: cards (2-col grid) on top, note full-width below */}
                     {(hasCards || att.note) && (
-                      <div className="min-w-0 flex-1 flex gap-6 text-sm">
-                        {/* Cards column */}
+                      <div className="min-w-0 flex-1 space-y-3 text-sm">
                         {hasCards && (
-                          <div className="shrink-0 space-y-3">
+                          <div className="grid grid-cols-2 gap-x-6 gap-y-3">
                             {(att.cardsIn?.length ?? 0) > 0 && (
                               <div>
-                                <p className="text-xs font-semibold text-amber-600 uppercase tracking-wide mb-1">Cards In</p>
-                                <ul className="space-y-0.5">
+                                <p className="text-xs font-semibold text-amber-600 uppercase tracking-wide mb-1.5">Cards In</p>
+                                <ul className="space-y-1">
                                   {att.cardsIn!.map((row, i) => (
-                                    <li key={i} className="flex items-start gap-2 text-amber-900">
-                                      <span className="shrink-0 w-6 text-right font-medium text-amber-700">{row.key}</span>
+                                    <li key={i} className="flex items-center gap-2 text-amber-900">
+                                      <span className="shrink-0 w-5 text-right font-semibold text-amber-500 text-xs">{row.key}</span>
                                       <span>{row.value}</span>
                                     </li>
                                   ))}
@@ -195,11 +194,11 @@ export default function CompetitionPage({
                             )}
                             {(att.cardsOut?.length ?? 0) > 0 && (
                               <div>
-                                <p className="text-xs font-semibold text-red-500 uppercase tracking-wide mb-1">Cards Out</p>
-                                <ul className="space-y-0.5">
+                                <p className="text-xs font-semibold text-red-500 uppercase tracking-wide mb-1.5">Cards Out</p>
+                                <ul className="space-y-1">
                                   {att.cardsOut!.map((row, i) => (
-                                    <li key={i} className="flex items-start gap-2 text-amber-900">
-                                      <span className="shrink-0 w-6 text-right font-medium text-red-500">{row.key}</span>
+                                    <li key={i} className="flex items-center gap-2 text-amber-900">
+                                      <span className="shrink-0 w-5 text-right font-semibold text-red-400 text-xs">{row.key}</span>
                                       <span>{row.value}</span>
                                     </li>
                                   ))}
@@ -208,11 +207,10 @@ export default function CompetitionPage({
                             )}
                           </div>
                         )}
-                        {/* Note column */}
                         {att.note && (
-                          <div className={`min-w-0 flex-1 ${hasCards ? 'border-l border-amber-100 pl-6' : ''}`}>
-                            <p className="text-amber-800 whitespace-pre-wrap leading-relaxed">{att.note}</p>
-                          </div>
+                          <p className={`text-amber-800 whitespace-pre-wrap leading-relaxed ${hasCards ? 'border-t border-amber-100 pt-3' : ''}`}>
+                            {att.note}
+                          </p>
                         )}
                       </div>
                     )}
