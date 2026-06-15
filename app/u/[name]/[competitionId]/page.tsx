@@ -174,9 +174,12 @@ export default function CompetitionPage({
                       </div>
                     )}
 
-                    {/* Right: cards in/out + note */}
+                    {/* Right: note (top) → cards in → cards out */}
                     {(hasCards || att.note) && (
                       <div className="min-w-0 flex-1 space-y-3 text-sm">
+                        {att.note && (
+                          <p className="text-amber-800 whitespace-pre-wrap leading-relaxed">{att.note}</p>
+                        )}
                         {(att.cardsIn?.length ?? 0) > 0 && (
                           <div>
                             <p className="text-xs font-semibold text-amber-600 uppercase tracking-wide mb-1">Cards In</p>
@@ -202,9 +205,6 @@ export default function CompetitionPage({
                               ))}
                             </ul>
                           </div>
-                        )}
-                        {att.note && (
-                          <p className="text-amber-700 whitespace-pre-wrap border-t border-amber-100 pt-2">{att.note}</p>
                         )}
                       </div>
                     )}
