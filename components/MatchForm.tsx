@@ -15,9 +15,11 @@ type ExtraField = { key: string; value: string }
 
 const MULLIGAN_SUBS = ['มือแรก', 'การ์ดที่เปลี่ยน', 'การ์ดที่ได้'] as const
 type MulliganSub = (typeof MULLIGAN_SUBS)[number]
-const PRACTICE_DYN_SECTIONS = ['บันทึกการเล่น', 'Misplays', 'Turning Point', 'Death Cards'] as const
+const PRACTICE_DYN_SECTIONS = ['Misplays', 'Turning Point', 'Death Cards'] as const
 type PracticeDynSection = (typeof PRACTICE_DYN_SECTIONS)[number]
-const SINGLE_INPUT_SECTIONS: readonly string[] = ['Misplays', 'Turning Point', 'บันทึกการเล่น']
+const SINGLE_INPUT_SECTIONS: readonly string[] = ['Misplays', 'Turning Point']
+
+type PlayGroup = { turn: string; notes: string[] }
 const RESOURCE_FIELDS = ['Counter Blast', 'Soul', 'Energy', 'Damage Denial', 'Shield Value'] as const
 type ResourceField = (typeof RESOURCE_FIELDS)[number]
 type ResourceRating = { good: boolean; bad: boolean }
@@ -66,6 +68,29 @@ export default function MatchForm({
       })
     ) as Record<MulliganSub, string[]>
   )
+  const [playLog, setPlayLog] = useState<PlayGroup[]>(() => {
+    if (!initial?.extra) return []
+    const prefix = 'บันทึกการเล่น::'
+    const entries = Object.entries(initial.extra).filter(([k]) => k.startsWith(prefix))
+    if (entries.length === 0) return []
+    // new format: บันทึกการเล่น::turn::idx = note
+    const grouped = new Map<string, string[]>()
+    const legacy: PlayGroup[] = []
+    for (const [k, v] of entries) {
+      const rest = k.slice(prefix.length)
+      const sepIdx = rest.indexOf('::')
+      if (sepIdx !== -1) {
+        const turn = rest.slice(0, sepIdx)
+        if (!grouped.has(turn)) grouped.set(turn, [])
+        grouped.get(turn)!.push(v)
+      } else {
+        // legacy: key=turn value=note OR key=note value=""
+        legacy.push({ turn: v ? rest : '', notes: [v || rest] })
+      }
+    }
+    const fromNew: PlayGroup[] = Array.from(grouped.entries()).map(([turn, notes]) => ({ turn, notes }))
+    return [...fromNew, ...legacy]
+  })
   const [practiceDynFields, setPracticeDynFields] = useState<Record<PracticeDynSection, ExtraField[]>>(() =>
     Object.fromEntries(
       PRACTICE_DYN_SECTIONS.map((sec) => {
@@ -86,6 +111,7 @@ export default function MatchForm({
           .filter(([key]) => {
             if (RESOURCE_FIELDS.some((k) => key === `RM_${k}`)) return false
             if (key.startsWith('Mulligan::')) return false
+            if (key.startsWith('บันทึกการเล่น::')) return false
             if (PRACTICE_DYN_SECTIONS.some((sec) => key.startsWith(`${sec}::`))) return false
             if (key === 'WinLoseSummary' || key === 'NextStrategy') return false
             return true
@@ -104,6 +130,21 @@ export default function MatchForm({
   }
   function removeMulliganItem(sub: MulliganSub, idx: number) {
     setMulliganSubFields((prev) => ({ ...prev, [sub]: prev[sub].filter((_, i) => i !== idx) }))
+  }
+
+  function addPlayGroup() { setPlayLog((p) => [...p, { turn: '', notes: [''] }]) }
+  function removePlayGroup(gi: number) { setPlayLog((p) => p.filter((_, i) => i !== gi)) }
+  function updatePlayTurn(gi: number, val: string) {
+    setPlayLog((p) => p.map((g, i) => i === gi ? { ...g, turn: val } : g))
+  }
+  function addPlayNote(gi: number) {
+    setPlayLog((p) => p.map((g, i) => i === gi ? { ...g, notes: [...g.notes, ''] } : g))
+  }
+  function updatePlayNote(gi: number, ni: number, val: string) {
+    setPlayLog((p) => p.map((g, i) => i === gi ? { ...g, notes: g.notes.map((n, j) => j === ni ? val : n) } : g))
+  }
+  function removePlayNote(gi: number, ni: number) {
+    setPlayLog((p) => p.map((g, i) => i === gi ? { ...g, notes: g.notes.filter((_, j) => j !== ni) } : g))
   }
 
   function addPracticeDynField(sec: PracticeDynSection) {
@@ -140,6 +181,11 @@ export default function MatchForm({
       for (const sub of MULLIGAN_SUBS) {
         for (const item of mulliganSubFields[sub]) {
           if (item.trim()) extra[`Mulligan::${sub}::${item.trim()}`] = ''
+        }
+      }
+      for (const [gi, group] of playLog.entries()) {
+        for (const [ni, note] of group.notes.entries()) {
+          if (note.trim()) extra[`บันทึกการเล่น::${group.turn.trim()}::${gi}_${ni}`] = note.trim()
         }
       }
       for (const sec of PRACTICE_DYN_SECTIONS) {
@@ -325,6 +371,68 @@ export default function MatchForm({
                 ))}
               </div>
 
+              {/* บันทึกการเล่น — turn (left) + multiple notes (right) */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium text-amber-900">บันทึกการเล่น</p>
+                  <button
+                    type="button"
+                    onClick={addPlayGroup}
+                    className="text-xs text-amber-600 underline hover:text-amber-950"
+                  >
+                    + เพิ่มฟิลด์
+                  </button>
+                </div>
+                {playLog.map((group, gi) => (
+                  <div key={gi} className="flex gap-2 items-start">
+                    {/* Turn field */}
+                    <input
+                      type="text"
+                      value={group.turn}
+                      onChange={(e) => updatePlayTurn(gi, e.target.value)}
+                      placeholder="เทิร์นที่"
+                      className="w-20 shrink-0 rounded-md border border-amber-300 bg-white px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    />
+                    {/* Notes column */}
+                    <div className="flex-1 space-y-1">
+                      {group.notes.map((note, ni) => (
+                        <div key={ni} className="flex gap-1">
+                          <input
+                            type="text"
+                            value={note}
+                            onChange={(e) => updatePlayNote(gi, ni, e.target.value)}
+                            placeholder="บันทึก"
+                            className="flex-1 rounded-md border border-amber-300 bg-white px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removePlayNote(gi, ni)}
+                            className="px-1.5 text-amber-400 hover:text-red-600"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => addPlayNote(gi)}
+                        className="text-xs text-amber-500 hover:text-amber-800"
+                      >
+                        + เพิ่มบันทึก
+                      </button>
+                    </div>
+                    {/* Remove group */}
+                    <button
+                      type="button"
+                      onClick={() => removePlayGroup(gi)}
+                      className="mt-1.5 px-1.5 text-amber-400 hover:text-red-600 text-sm shrink-0"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+
               {PRACTICE_DYN_SECTIONS.map((sec) => (
                 <div key={sec} className="space-y-2">
                   <div className="flex items-center justify-between">
@@ -344,7 +452,7 @@ export default function MatchForm({
                           type="text"
                           value={f.key}
                           onChange={(e) => updatePracticeDynField(sec, idx, { key: e.target.value })}
-                          placeholder={sec === 'บันทึกการเล่น' ? 'บันทึก...' : 'กรอกข้อมูล'}
+                          placeholder="กรอกข้อมูล"
                           className="flex-1 rounded-md border border-amber-300 bg-white px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
                         />
                         <button
@@ -361,14 +469,14 @@ export default function MatchForm({
                           type="text"
                           value={f.key}
                           onChange={(e) => updatePracticeDynField(sec, idx, { key: e.target.value })}
-                          placeholder={sec === 'บันทึกการเล่น' ? 'เทิร์นที่' : 'Card Code'}
+                          placeholder="Card Code"
                           className="w-1/3 rounded-md border border-amber-300 bg-white px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
                         />
                         <input
                           type="text"
                           value={f.value}
                           onChange={(e) => updatePracticeDynField(sec, idx, { value: e.target.value })}
-                          placeholder={sec === 'บันทึกการเล่น' ? 'notes' : 'Card Name'}
+                          placeholder="Card Name"
                           className="flex-1 rounded-md border border-amber-300 bg-white px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
                         />
                         <button

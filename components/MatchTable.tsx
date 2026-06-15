@@ -29,8 +29,37 @@ function getPracticeData(m: Match): { sec: string; items: string[] }[] {
     if (items.length > 0) result.push({ sec: `Mulligan · ${sub}`, items })
   }
 
+  // บันทึกการเล่น — new format: บันทึกการเล่น::turn::gi_ni = note
+  //                  legacy format: บันทึกการเล่น::turn = note  OR  ::note = ""
+  {
+    const prefix = 'บันทึกการเล่น::'
+    const raw = Object.entries(m.extra ?? {}).filter(([k]) => k.startsWith(prefix))
+    const grouped = new Map<string, { sortKey: string; note: string }[]>()
+    const legacyItems: string[] = []
+    for (const [k, v] of raw) {
+      const rest = k.slice(prefix.length)
+      const sep = rest.indexOf('::')
+      if (sep !== -1) {
+        const turn = rest.slice(0, sep)
+        const idxStr = rest.slice(sep + 2)
+        if (!grouped.has(turn)) grouped.set(turn, [])
+        grouped.get(turn)!.push({ sortKey: idxStr, note: v })
+      } else {
+        legacyItems.push(v ? `เทิร์น ${rest}: ${v}` : rest)
+      }
+    }
+    const items: string[] = [...legacyItems]
+    for (const [turn, notes] of grouped.entries()) {
+      notes.sort((a, b) => a.sortKey.localeCompare(b.sortKey))
+      for (const { note } of notes) {
+        items.push(turn ? `เทิร์น ${turn}: ${note}` : note)
+      }
+    }
+    if (items.length > 0) result.push({ sec: 'บันทึกการเล่น', items })
+  }
+
   // Other practice sections
-  for (const sec of ['บันทึกการเล่น', 'Misplays', 'Turning Point', 'Death Cards'] as const) {
+  for (const sec of ['Misplays', 'Turning Point', 'Death Cards'] as const) {
     const prefix = `${sec}::`
     const items = Object.entries(m.extra ?? {})
       .filter(([k]) => k.startsWith(prefix))
