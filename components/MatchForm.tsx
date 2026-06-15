@@ -19,7 +19,8 @@ const PRACTICE_DYN_SECTIONS = ['Misplays', 'Turning Point', 'Death Cards'] as co
 type PracticeDynSection = (typeof PRACTICE_DYN_SECTIONS)[number]
 const SINGLE_INPUT_SECTIONS: readonly string[] = ['Misplays', 'Turning Point']
 
-type PlayGroup = { turn: string; notes: string[] }
+type PlayNote = { text: string; pr: boolean }
+type PlayGroup = { turn: string; notes: PlayNote[] }
 const RESOURCE_FIELDS = ['Counter Blast', 'Soul', 'Energy', 'Damage Denial', 'Shield Value'] as const
 type ResourceField = (typeof RESOURCE_FIELDS)[number]
 type ResourceRating = { good: boolean; bad: boolean }
@@ -73,8 +74,7 @@ export default function MatchForm({
     const prefix = 'บันทึกการเล่น::'
     const entries = Object.entries(initial.extra).filter(([k]) => k.startsWith(prefix))
     if (entries.length === 0) return []
-    // new format: บันทึกการเล่น::turn::idx = note
-    const grouped = new Map<string, string[]>()
+    const grouped = new Map<string, PlayNote[]>()
     const legacy: PlayGroup[] = []
     for (const [k, v] of entries) {
       const rest = k.slice(prefix.length)
@@ -82,10 +82,10 @@ export default function MatchForm({
       if (sepIdx !== -1) {
         const turn = rest.slice(0, sepIdx)
         if (!grouped.has(turn)) grouped.set(turn, [])
-        grouped.get(turn)!.push(v)
+        const pr = v.startsWith('[PR] ')
+        grouped.get(turn)!.push({ text: pr ? v.slice(5) : v, pr })
       } else {
-        // legacy: key=turn value=note OR key=note value=""
-        legacy.push({ turn: v ? rest : '', notes: [v || rest] })
+        legacy.push({ turn: v ? rest : '', notes: [{ text: v || rest, pr: false }] })
       }
     }
     const fromNew: PlayGroup[] = Array.from(grouped.entries()).map(([turn, notes]) => ({ turn, notes }))
@@ -132,16 +132,19 @@ export default function MatchForm({
     setMulliganSubFields((prev) => ({ ...prev, [sub]: prev[sub].filter((_, i) => i !== idx) }))
   }
 
-  function addPlayGroup() { setPlayLog((p) => [...p, { turn: '', notes: [''] }]) }
+  function addPlayGroup() { setPlayLog((p) => [...p, { turn: '', notes: [{ text: '', pr: false }] }]) }
   function removePlayGroup(gi: number) { setPlayLog((p) => p.filter((_, i) => i !== gi)) }
   function updatePlayTurn(gi: number, val: string) {
     setPlayLog((p) => p.map((g, i) => i === gi ? { ...g, turn: val } : g))
   }
   function addPlayNote(gi: number) {
-    setPlayLog((p) => p.map((g, i) => i === gi ? { ...g, notes: [...g.notes, ''] } : g))
+    setPlayLog((p) => p.map((g, i) => i === gi ? { ...g, notes: [...g.notes, { text: '', pr: false }] } : g))
   }
-  function updatePlayNote(gi: number, ni: number, val: string) {
-    setPlayLog((p) => p.map((g, i) => i === gi ? { ...g, notes: g.notes.map((n, j) => j === ni ? val : n) } : g))
+  function updatePlayNote(gi: number, ni: number, text: string) {
+    setPlayLog((p) => p.map((g, i) => i === gi ? { ...g, notes: g.notes.map((n, j) => j === ni ? { ...n, text } : n) } : g))
+  }
+  function togglePlayNotePR(gi: number, ni: number) {
+    setPlayLog((p) => p.map((g, i) => i === gi ? { ...g, notes: g.notes.map((n, j) => j === ni ? { ...n, pr: !n.pr } : n) } : g))
   }
   function removePlayNote(gi: number, ni: number) {
     setPlayLog((p) => p.map((g, i) => i === gi ? { ...g, notes: g.notes.filter((_, j) => j !== ni) } : g))
@@ -185,7 +188,10 @@ export default function MatchForm({
       }
       for (const [gi, group] of playLog.entries()) {
         for (const [ni, note] of group.notes.entries()) {
-          if (note.trim()) extra[`บันทึกการเล่น::${group.turn.trim()}::${gi}_${ni}`] = note.trim()
+          if (note.text.trim()) {
+            const val = note.pr ? `[PR] ${note.text.trim()}` : note.text.trim()
+            extra[`บันทึกการเล่น::${group.turn.trim()}::${gi}_${ni}`] = val
+          }
         }
       }
       for (const sec of PRACTICE_DYN_SECTIONS) {
@@ -399,11 +405,22 @@ export default function MatchForm({
                         <div key={ni} className="flex gap-1">
                           <input
                             type="text"
-                            value={note}
+                            value={note.text}
                             onChange={(e) => updatePlayNote(gi, ni, e.target.value)}
                             placeholder="บันทึก"
                             className="flex-1 rounded-md border border-amber-300 bg-white px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
                           />
+                          <button
+                            type="button"
+                            onClick={() => togglePlayNotePR(gi, ni)}
+                            className={`shrink-0 rounded-md border px-2 py-1.5 text-xs font-bold transition ${
+                              note.pr
+                                ? 'bg-amber-500 border-amber-500 text-white'
+                                : 'bg-white border-amber-300 text-amber-400 hover:border-amber-400 hover:text-amber-600'
+                            }`}
+                          >
+                            PR
+                          </button>
                           <button
                             type="button"
                             onClick={() => removePlayNote(gi, ni)}

@@ -240,12 +240,17 @@ export default function MatchTable({
                                         <p className="text-xs font-medium text-amber-700 mb-0.5">เทิร์น {g.turn}</p>
                                       )}
                                       <ul className={`space-y-0.5 ${g.turn ? 'pl-3' : ''}`}>
-                                        {g.notes.map((note, ni) => (
-                                          <li key={ni} className="flex items-start gap-1.5 text-sm text-amber-900">
-                                            <span className="mt-0.5 text-amber-500 shrink-0">•</span>
-                                            <span>{note}</span>
-                                          </li>
-                                        ))}
+                                        {g.notes.map((note, ni) => {
+                                          const isPR = note.startsWith('[PR] ')
+                                          const text = isPR ? note.slice(5) : note
+                                          return (
+                                            <li key={ni} className="flex items-start gap-1.5 text-sm text-amber-900">
+                                              <span className="mt-0.5 text-amber-500 shrink-0">•</span>
+                                              {isPR && <span className="shrink-0 rounded px-1 text-xs font-bold bg-amber-500 text-white leading-5">PR</span>}
+                                              <span>{text}</span>
+                                            </li>
+                                          )
+                                        })}
                                       </ul>
                                     </div>
                                   ))}
