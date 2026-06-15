@@ -17,8 +17,13 @@ const EXTRA_KEY_ORDER = [
   'RM_Shield Value',
 ]
 
-function getPracticeData(m: Match): { sec: string; items: string[] }[] {
-  const result: { sec: string; items: string[] }[] = []
+type PlayTurnGroup = { turn: string; notes: string[] }
+type PracticeSection =
+  | { sec: string; items: string[]; groups?: undefined }
+  | { sec: string; groups: PlayTurnGroup[]; items?: undefined }
+
+function getPracticeData(m: Match): PracticeSection[] {
+  const result: PracticeSection[] = []
 
   // Mulligan — grouped by sub-section
   for (const sub of MULLIGAN_SUBS) {
@@ -35,7 +40,7 @@ function getPracticeData(m: Match): { sec: string; items: string[] }[] {
     const prefix = 'บันทึกการเล่น::'
     const raw = Object.entries(m.extra ?? {}).filter(([k]) => k.startsWith(prefix))
     const grouped = new Map<string, { sortKey: string; note: string }[]>()
-    const legacyItems: string[] = []
+    const legacyNotes: string[] = []
     for (const [k, v] of raw) {
       const rest = k.slice(prefix.length)
       const sep = rest.indexOf('::')
@@ -45,17 +50,24 @@ function getPracticeData(m: Match): { sec: string; items: string[] }[] {
         if (!grouped.has(turn)) grouped.set(turn, [])
         grouped.get(turn)!.push({ sortKey: idxStr, note: v })
       } else {
-        legacyItems.push(v ? `เทิร์น ${rest}: ${v}` : rest)
+        legacyNotes.push(v ? `เทิร์น ${rest}: ${v}` : rest)
       }
     }
-    const items: string[] = [...legacyItems]
-    for (const [turn, notes] of grouped.entries()) {
-      notes.sort((a, b) => a.sortKey.localeCompare(b.sortKey))
-      for (const { note } of notes) {
-        items.push(turn ? `เทิร์น ${turn}: ${note}` : note)
-      }
+    const sortedTurns = Array.from(grouped.entries()).sort(([a], [b]) => {
+      const na = parseFloat(a)
+      const nb = parseFloat(b)
+      const numA = isNaN(na) ? Infinity : na
+      const numB = isNaN(nb) ? Infinity : nb
+      if (numA !== numB) return numA - numB
+      return a.localeCompare(b, undefined, { numeric: true })
+    })
+    const groups: PlayTurnGroup[] = []
+    if (legacyNotes.length > 0) groups.push({ turn: '', notes: legacyNotes })
+    for (const [turn, entries] of sortedTurns) {
+      entries.sort((a, b) => a.sortKey.localeCompare(b.sortKey))
+      groups.push({ turn, notes: entries.map((e) => e.note) })
     }
-    if (items.length > 0) result.push({ sec: 'บันทึกการเล่น', items })
+    if (groups.length > 0) result.push({ sec: 'บันทึกการเล่น', groups })
   }
 
   // Other practice sections
@@ -217,17 +229,37 @@ export default function MatchTable({
                       <td colSpan={colSpan} className="px-6 py-3 space-y-3">
                         <p className="text-xs font-semibold text-amber-600 uppercase tracking-wide">ข้อมูลการ Practise</p>
                         <div className="grid grid-cols-2 gap-x-8 gap-y-2 sm:grid-cols-3">
-                          {practiceData.map(({ sec, items }) => (
-                            <div key={sec}>
-                              <p className="text-xs font-semibold text-amber-800 mb-1">{sec}</p>
-                              <ul className="space-y-0.5">
-                                {items.map((item, i) => (
-                                  <li key={i} className="flex items-start gap-1.5 text-sm text-amber-900">
-                                    <span className="mt-0.5 text-amber-500 shrink-0">•</span>
-                                    <span>{item}</span>
-                                  </li>
-                                ))}
-                              </ul>
+                          {practiceData.map((section) => (
+                            <div key={section.sec}>
+                              <p className="text-xs font-semibold text-amber-800 mb-1">{section.sec}</p>
+                              {section.groups ? (
+                                <div className="space-y-1.5">
+                                  {section.groups.map((g, gi) => (
+                                    <div key={gi}>
+                                      {g.turn && (
+                                        <p className="text-xs font-medium text-amber-700 mb-0.5">เทิร์น {g.turn}</p>
+                                      )}
+                                      <ul className={`space-y-0.5 ${g.turn ? 'pl-3' : ''}`}>
+                                        {g.notes.map((note, ni) => (
+                                          <li key={ni} className="flex items-start gap-1.5 text-sm text-amber-900">
+                                            <span className="mt-0.5 text-amber-500 shrink-0">•</span>
+                                            <span>{note}</span>
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <ul className="space-y-0.5">
+                                  {section.items!.map((item, i) => (
+                                    <li key={i} className="flex items-start gap-1.5 text-sm text-amber-900">
+                                      <span className="mt-0.5 text-amber-500 shrink-0">•</span>
+                                      <span>{item}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
                             </div>
                           ))}
                         </div>
