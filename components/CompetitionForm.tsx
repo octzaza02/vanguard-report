@@ -38,7 +38,7 @@ function DeckSection({
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
         <p className="text-sm font-medium text-amber-900">{label}</p>
-        <button type="button" onClick={addRow} className="text-xs text-amber-600 underline hover:text-amber-950">
+        <button type="button" onClick={addRow} className="rounded-md border border-amber-300 px-2 py-0.5 text-xs text-amber-600 hover:bg-amber-50 hover:border-amber-400 transition">
           + เพิ่มฟิลด์
         </button>
       </div>
@@ -58,7 +58,7 @@ function DeckSection({
             placeholder="Card Name"
             className="flex-1 rounded-md border border-amber-300 bg-white px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
           />
-          <button type="button" onClick={() => removeRow(idx)} className="px-2 text-amber-500 hover:text-red-600">
+          <button type="button" onClick={() => removeRow(idx)} className="shrink-0 rounded-md border border-amber-200 px-2 py-1.5 text-xs text-amber-400 hover:border-red-300 hover:text-red-500 transition">
             ✕
           </button>
         </div>
@@ -186,7 +186,7 @@ export default function CompetitionForm({
                 <button
                   type="button"
                   onClick={() => removeAttachment(idx)}
-                  className="text-xs text-red-500 hover:text-red-700"
+                  className="rounded-md border border-red-200 px-2 py-0.5 text-xs text-red-500 hover:bg-red-50 hover:border-red-400 transition"
                 >
                   ลบกรอบนี้
                 </button>
@@ -205,7 +205,7 @@ export default function CompetitionForm({
                 <button
                   type="button"
                   onClick={() => updateAttachment(idx, { image: null })}
-                  className="text-sm text-red-600 hover:underline"
+                  className="rounded-md border border-red-200 px-2 py-1 text-xs text-red-500 hover:bg-red-50 hover:border-red-400 transition"
                 >
                   ลบรูป
                 </button>
