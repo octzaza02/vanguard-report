@@ -140,16 +140,23 @@ export default function UserFolderPage({ params }: { params: Promise<{ name: str
                   {c.decklog && <p className="text-xs text-amber-500 mt-1 truncate">Decklog: {c.decklog}</p>}
                 </div>
               </Link>
-              {isOwner && (
-                <div className="mt-3 flex gap-3 text-xs">
-                  <button onClick={() => setEditing(c)} className="text-amber-700 hover:underline">
-                    แก้ไข
-                  </button>
-                  <button onClick={() => handleDelete(c.id)} className="text-red-600 hover:underline">
-                    ลบ
-                  </button>
-                </div>
-              )}
+              <div className="mt-3 flex items-center justify-between">
+                {isOwner ? (
+                  <div className="flex gap-3 text-xs">
+                    <button onClick={() => setEditing(c)} className="text-amber-700 hover:underline">
+                      แก้ไข
+                    </button>
+                    <button onClick={() => handleDelete(c.id)} className="text-red-600 hover:underline">
+                      ลบ
+                    </button>
+                  </div>
+                ) : (
+                  <span />
+                )}
+                <p className="text-xs text-amber-400">
+                  {new Date(c.created_at).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </p>
+              </div>
             </div>
           ))}
         </div>
