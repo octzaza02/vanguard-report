@@ -217,3 +217,9 @@ export async function listFeed(token: string, since: string): Promise<FeedItem[]
   if (error) throw new Error(error.message)
   return (data as FeedItem[]) ?? []
 }
+
+export async function getFollowingIds(token: string): Promise<string[]> {
+  const { data, error } = await supabase.rpc('get_following_ids', { p_token: token })
+  if (error) throw new Error(error.message)
+  return (data as string[]) ?? []
+}

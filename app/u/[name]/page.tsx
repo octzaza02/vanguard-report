@@ -12,7 +12,7 @@ import AvatarEditor from '@/components/AvatarEditor'
 export default function UserFolderPage({ params }: { params: Promise<{ name: string }> }) {
   const { name } = use(params)
   const decodedName = decodeURIComponent(name)
-  const { session } = useSession()
+  const { session, ready } = useSession()
   const isOwner = session?.name === decodedName
 
   const [user, setUser] = useState<User | null | undefined>(undefined)
@@ -43,7 +43,7 @@ export default function UserFolderPage({ params }: { params: Promise<{ name: str
     if (!session || isOwner || !user) return
     checkIsFollowing(session.token, user.id)
       .then(setFollowing)
-      .catch(() => {})
+      .catch(() => setFollowing(false))
   }, [session, isOwner, user])
 
   async function handleFollow() {
@@ -125,7 +125,7 @@ export default function UserFolderPage({ params }: { params: Promise<{ name: str
           </div>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
-          {!isOwner && session && following !== null && (
+          {!isOwner && ready && session && following !== null && (
             <button
               onClick={handleFollow}
               disabled={followLoading}

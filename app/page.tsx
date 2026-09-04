@@ -2,18 +2,106 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
-import { listUsers, listProfileCards, upsertProfileCard } from '@/lib/api'
+import { listUsers, listProfileCards, upsertProfileCard, getFollowingIds } from '@/lib/api'
 import type { ProfileCard, User } from '@/lib/types'
 import { useSession } from '@/lib/session'
 import FolderIcon from '@/components/FolderIcon'
 import ProfileCardModal from '@/components/ProfileCardModal'
 
+function UserCard({
+  u, isOwner, card, onCardUser,
+}: {
+  u: User
+  isOwner: boolean
+  card: ProfileCard | null
+  onCardUser: (u: User) => void
+}) {
+  const showCardButton = isOwner || card !== null
+  return (
+    <div className="group rounded-xl border border-amber-200 bg-white p-5 shadow-sm hover:shadow-md hover:border-amber-400 transition">
+      <Link href={`/u/${encodeURIComponent(u.name)}`} className="flex items-center gap-3">
+        <FolderIcon avatar={u.avatar} size={40} className="group-hover:bg-amber-100 transition" />
+        <div>
+          <p className="font-medium text-amber-950">{u.name}</p>
+          {isOwner && <p className="text-xs text-amber-600">โฟลเดอร์ของฉัน</p>}
+        </div>
+      </Link>
+      <div className="mt-3 border-t border-amber-100 pt-3 flex flex-wrap items-center gap-2">
+        <Link
+          href={`/u/${encodeURIComponent(u.name)}`}
+          className="text-xs font-medium text-amber-700 border border-amber-300 rounded-full px-3 py-1 hover:bg-amber-50 hover:border-amber-400 transition"
+        >
+          ไปที่โฟลเดอร์
+        </Link>
+        {showCardButton && (
+          <button
+            onClick={() => onCardUser(u)}
+            className="text-xs font-medium text-amber-700 border border-amber-300 rounded-full px-3 py-1 hover:bg-amber-50 hover:border-amber-400 transition"
+          >
+            {card ? 'นามบัตรแนะนำตัว' : '+ สร้างนามบัตรแนะนำตัว'}
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function UserSections({
+  users, followingIds, session, cards, onCardUser,
+}: {
+  users: User[]
+  followingIds: Set<string>
+  session: { name: string } | null
+  cards: Record<string, ProfileCard>
+  onCardUser: (u: User) => void
+}) {
+  const followedUsers = users.filter((u) => followingIds.has(u.id))
+  const otherUsers = users.filter((u) => !followingIds.has(u.id))
+  return (
+    <>
+      {followedUsers.length > 0 && (
+        <section className="mb-8">
+          <h2 className="text-base font-semibold text-amber-800 mb-3">ผู้ที่ติดตาม</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {followedUsers.map((u) => (
+              <UserCard
+                key={u.id}
+                u={u}
+                isOwner={session?.name === u.name}
+                card={cards[u.id] ?? null}
+                onCardUser={onCardUser}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+      <section>
+        {followedUsers.length > 0 && (
+          <h2 className="text-base font-semibold text-amber-800 mb-3">ผู้เล่นทั้งหมด</h2>
+        )}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          {otherUsers.map((u) => (
+            <UserCard
+              key={u.id}
+              u={u}
+              isOwner={session?.name === u.name}
+              card={cards[u.id] ?? null}
+              onCardUser={onCardUser}
+            />
+          ))}
+        </div>
+      </section>
+    </>
+  )
+}
+
 export default function HomePage() {
   const [users, setUsers] = useState<User[] | null>(null)
   const [cards, setCards] = useState<Record<string, ProfileCard>>({})
+  const [followingIds, setFollowingIds] = useState<Set<string>>(new Set())
   const [error, setError] = useState<string | null>(null)
   const [cardUser, setCardUser] = useState<User | null>(null)
-  const { session } = useSession()
+  const { session, ready } = useSession()
 
   const reload = useCallback(() => {
     listUsers()
@@ -21,14 +109,19 @@ export default function HomePage() {
       .catch((err) => setError(err instanceof Error ? err.message : 'โหลดข้อมูลไม่สำเร็จ'))
     listProfileCards()
       .then((list) => setCards(Object.fromEntries(list.map((c) => [c.user_id, c]))))
-      .catch(() => {
-        /* profile cards are optional — ignore load errors silently */
-      })
+      .catch(() => {})
   }, [])
 
   useEffect(() => {
     reload()
   }, [reload])
+
+  useEffect(() => {
+    if (!session) { setFollowingIds(new Set()); return }
+    getFollowingIds(session.token)
+      .then((ids) => setFollowingIds(new Set(ids)))
+      .catch(() => {})
+  }, [session])
 
   async function handleSaveProfileCard(input: Parameters<typeof upsertProfileCard>[1]) {
     if (!session) return
@@ -56,44 +149,13 @@ export default function HomePage() {
       )}
 
       {users && users.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          {users.map((u) => {
-            const isOwner = session?.name === u.name
-            const card = cards[u.id] ?? null
-            const showCardButton = isOwner || card !== null
-            return (
-              <div
-                key={u.id}
-                className="group rounded-xl border border-amber-200 bg-white p-5 shadow-sm hover:shadow-md hover:border-amber-400 transition"
-              >
-                <Link href={`/u/${encodeURIComponent(u.name)}`} className="flex items-center gap-3">
-                  <FolderIcon avatar={u.avatar} size={40} className="group-hover:bg-amber-100 transition" />
-                  <div>
-                    <p className="font-medium text-amber-950">{u.name}</p>
-                    {isOwner && <p className="text-xs text-amber-600">โฟลเดอร์ของฉัน</p>}
-                  </div>
-                </Link>
-
-                <div className="mt-3 border-t border-amber-100 pt-3 flex flex-wrap items-center gap-2">
-                  <Link
-                    href={`/u/${encodeURIComponent(u.name)}`}
-                    className="text-xs font-medium text-amber-700 border border-amber-300 rounded-full px-3 py-1 hover:bg-amber-50 hover:border-amber-400 transition"
-                  >
-                    ไปที่โฟลเดอร์
-                  </Link>
-                  {showCardButton && (
-                    <button
-                      onClick={() => setCardUser(u)}
-                      className="text-xs font-medium text-amber-700 border border-amber-300 rounded-full px-3 py-1 hover:bg-amber-50 hover:border-amber-400 transition"
-                    >
-                      {card ? 'นามบัตรแนะนำตัว' : '+ สร้างนามบัตรแนะนำตัว'}
-                    </button>
-                  )}
-                </div>
-              </div>
-            )
-          })}
-        </div>
+        <UserSections
+          users={users}
+          followingIds={followingIds}
+          session={session}
+          cards={cards}
+          onCardUser={setCardUser}
+        />
       )}
 
       {cardUser && (
