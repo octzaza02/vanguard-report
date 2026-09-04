@@ -65,3 +65,15 @@ export type Session = {
   name: string
   isAdmin: boolean
 }
+
+export type FeedItem = {
+  kind: 'new_competition' | 'new_matches'
+  competition_id: string
+  competition_name: string
+  competition_category: string | null
+  user_id: string
+  user_name: string
+  user_avatar: string | null
+  match_count: number
+  created_at: string
+}

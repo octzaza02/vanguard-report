@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import type { Competition, Match, MatchResult, ProfileCard, ProfileLink, Session, User } from './types'
+import type { Competition, FeedItem, Match, MatchResult, ProfileCard, ProfileLink, Session, User } from './types'
 
 function unwrap<T>({ data, error }: { data: T | null; error: { message: string } | null }): T {
   if (error) throw new Error(error.message)
@@ -192,4 +192,28 @@ export async function updateMatch(token: string, id: string, input: MatchInput):
 export async function deleteMatch(token: string, id: string): Promise<void> {
   const { error } = await supabase.rpc('delete_match', { p_token: token, p_id: id })
   if (error) throw new Error(error.message)
+}
+
+// --- Follow system ---
+
+export async function followUser(token: string, targetUserId: string): Promise<void> {
+  const { error } = await supabase.rpc('follow_user', { p_token: token, p_target_id: targetUserId })
+  if (error) throw new Error(error.message)
+}
+
+export async function unfollowUser(token: string, targetUserId: string): Promise<void> {
+  const { error } = await supabase.rpc('unfollow_user', { p_token: token, p_target_id: targetUserId })
+  if (error) throw new Error(error.message)
+}
+
+export async function checkIsFollowing(token: string, targetUserId: string): Promise<boolean> {
+  const { data, error } = await supabase.rpc('is_following', { p_token: token, p_target_id: targetUserId })
+  if (error) throw new Error(error.message)
+  return data as boolean
+}
+
+export async function listFeed(token: string, since: string): Promise<FeedItem[]> {
+  const { data, error } = await supabase.rpc('list_feed', { p_token: token, p_since: since })
+  if (error) throw new Error(error.message)
+  return (data as FeedItem[]) ?? []
 }

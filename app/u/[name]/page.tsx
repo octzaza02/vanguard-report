@@ -2,7 +2,7 @@
 
 import { use, useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
-import { getUser, listCompetitions, createCompetition, updateCompetition, deleteCompetition, updateAvatar, type CompetitionInput } from '@/lib/api'
+import { getUser, listCompetitions, createCompetition, updateCompetition, deleteCompetition, updateAvatar, followUser, unfollowUser, checkIsFollowing, type CompetitionInput } from '@/lib/api'
 import type { Competition, User } from '@/lib/types'
 import { useSession } from '@/lib/session'
 import CompetitionForm from '@/components/CompetitionForm'
@@ -21,6 +21,8 @@ export default function UserFolderPage({ params }: { params: Promise<{ name: str
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Competition | null>(null)
   const [showAvatarEditor, setShowAvatarEditor] = useState(false)
+  const [following, setFollowing] = useState<boolean | null>(null)
+  const [followLoading, setFollowLoading] = useState(false)
 
   const reload = useCallback(async () => {
     try {
@@ -36,6 +38,31 @@ export default function UserFolderPage({ params }: { params: Promise<{ name: str
   useEffect(() => {
     reload()
   }, [reload])
+
+  useEffect(() => {
+    if (!session || isOwner || !user) return
+    checkIsFollowing(session.token, user.id)
+      .then(setFollowing)
+      .catch(() => {})
+  }, [session, isOwner, user])
+
+  async function handleFollow() {
+    if (!session || !user) return
+    setFollowLoading(true)
+    try {
+      if (following) {
+        await unfollowUser(session.token, user.id)
+        setFollowing(false)
+      } else {
+        await followUser(session.token, user.id)
+        setFollowing(true)
+      }
+    } catch {
+      // silent
+    } finally {
+      setFollowLoading(false)
+    }
+  }
 
   async function handleCreate(fields: CompetitionInput) {
     if (!session) throw new Error('กรุณาเข้าสู่ระบบ')
@@ -97,14 +124,29 @@ export default function UserFolderPage({ params }: { params: Promise<{ name: str
             <h1 className="text-2xl font-semibold">{decodedName}</h1>
           </div>
         </div>
-        {isOwner && (
-          <button
-            onClick={() => setShowForm(true)}
-            className="w-full sm:w-auto px-4 py-2 rounded-md bg-amber-600 text-white text-sm hover:bg-amber-500 transition"
-          >
-            + สร้างงานแข่งใหม่
-          </button>
-        )}
+        <div className="flex gap-2 w-full sm:w-auto">
+          {!isOwner && session && following !== null && (
+            <button
+              onClick={handleFollow}
+              disabled={followLoading}
+              className={`flex-1 sm:flex-none px-4 py-2 rounded-md text-sm font-medium transition border ${
+                following
+                  ? 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-red-50 hover:border-red-300 hover:text-red-600'
+                  : 'border-transparent bg-amber-600 text-white hover:bg-amber-500'
+              } disabled:opacity-60`}
+            >
+              {following ? '✓ ติดตามอยู่' : '+ ติดตาม'}
+            </button>
+          )}
+          {isOwner && (
+            <button
+              onClick={() => setShowForm(true)}
+              className="w-full sm:w-auto px-4 py-2 rounded-md bg-amber-600 text-white text-sm hover:bg-amber-500 transition"
+            >
+              + สร้างงานแข่งใหม่
+            </button>
+          )}
+        </div>
       </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}

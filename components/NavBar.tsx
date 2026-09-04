@@ -5,13 +5,17 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useSession, clearSession } from '@/lib/session'
 import { logout } from '@/lib/api'
+import { useNotifications } from '@/lib/useNotifications'
 import AdminManageUsersModal from './AdminManageUsersModal'
+import NotificationDropdown from './NotificationDropdown'
 
 export default function NavBar() {
   const { session, ready } = useSession()
   const router = useRouter()
   const [showManageUsers, setShowManageUsers] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [showNotif, setShowNotif] = useState(false)
+  const { items, unreadCount, lastSeenAt, markAllRead } = useNotifications(session?.token ?? null)
 
   async function handleLogout() {
     if (session) await logout(session.token).catch(() => {})
@@ -51,6 +55,29 @@ export default function NavBar() {
                       จัดการผู้ใช้งาน
                     </button>
                   )}
+                  {/* Bell */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowNotif((v) => !v)}
+                      aria-label="การแจ้งเตือน"
+                      className="relative flex h-8 w-8 items-center justify-center rounded-md border border-amber-200 bg-amber-50 hover:bg-amber-100 transition text-amber-700"
+                    >
+                      🔔
+                      {unreadCount > 0 && (
+                        <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-medium leading-none">
+                          {unreadCount > 9 ? '9+' : unreadCount}
+                        </span>
+                      )}
+                    </button>
+                    {showNotif && (
+                      <NotificationDropdown
+                        items={items}
+                        lastSeenAt={lastSeenAt}
+                        onMarkAllRead={() => { markAllRead(); }}
+                        onClose={() => setShowNotif(false)}
+                      />
+                    )}
+                  </div>
                   <button
                     onClick={handleLogout}
                     className="px-3 py-1.5 rounded-md bg-amber-600 text-white hover:bg-amber-500 transition"
@@ -68,7 +95,7 @@ export default function NavBar() {
               )}
             </nav>
 
-            {/* Mobile: login button or hamburger */}
+            {/* Mobile: login button or bell + hamburger */}
             <div className="md:hidden flex items-center gap-2">
               {!session && (
                 <Link
@@ -79,13 +106,37 @@ export default function NavBar() {
                 </Link>
               )}
               {session && (
-                <button
-                  onClick={() => setMenuOpen((o) => !o)}
-                  aria-label="เมนู"
-                  className="flex h-9 w-9 items-center justify-center rounded-md border border-amber-200 text-amber-700 hover:bg-amber-50 transition text-lg"
-                >
-                  {menuOpen ? '✕' : '☰'}
-                </button>
+                <>
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowNotif((v) => !v)}
+                      aria-label="การแจ้งเตือน"
+                      className="relative flex h-9 w-9 items-center justify-center rounded-md border border-amber-200 text-amber-700 hover:bg-amber-50 transition"
+                    >
+                      🔔
+                      {unreadCount > 0 && (
+                        <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-medium leading-none">
+                          {unreadCount > 9 ? '9+' : unreadCount}
+                        </span>
+                      )}
+                    </button>
+                    {showNotif && (
+                      <NotificationDropdown
+                        items={items}
+                        lastSeenAt={lastSeenAt}
+                        onMarkAllRead={markAllRead}
+                        onClose={() => setShowNotif(false)}
+                      />
+                    )}
+                  </div>
+                  <button
+                    onClick={() => setMenuOpen((o) => !o)}
+                    aria-label="เมนู"
+                    className="flex h-9 w-9 items-center justify-center rounded-md border border-amber-200 text-amber-700 hover:bg-amber-50 transition text-lg"
+                  >
+                    {menuOpen ? '✕' : '☰'}
+                  </button>
+                </>
               )}
             </div>
           </>
