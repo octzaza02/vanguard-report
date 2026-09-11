@@ -36,6 +36,12 @@ export default function NavBar() {
           <>
             {/* Desktop nav */}
             <nav className="hidden md:flex items-center gap-3 text-sm">
+              <Link
+                href="/board"
+                className="px-3 py-1.5 rounded-md bg-amber-50 hover:bg-amber-100 transition"
+              >
+                Discussion Board
+              </Link>
               {session ? (
                 <>
                   <span className="text-amber-700">
@@ -97,6 +103,12 @@ export default function NavBar() {
 
             {/* Mobile: login button or bell + hamburger */}
             <div className="md:hidden flex items-center gap-2">
+              <Link
+                href="/board"
+                className="px-2.5 py-1.5 rounded-md bg-amber-50 text-amber-800 text-sm hover:bg-amber-100 transition"
+              >
+                Board
+              </Link>
               {!session && (
                 <Link
                   href="/login"
@@ -147,6 +159,13 @@ export default function NavBar() {
       {menuOpen && session && (
         <div className="md:hidden border-t border-amber-100 bg-white px-4 pt-3 pb-4 flex flex-col gap-2 text-sm shadow-md">
           <p className="text-amber-600 text-xs">สวัสดี, <span className="font-medium text-amber-950">{session.name}</span></p>
+          <Link
+            href="/board"
+            onClick={() => setMenuOpen(false)}
+            className="px-3 py-2 rounded-md bg-amber-50 hover:bg-amber-100 transition"
+          >
+            💬 Discussion Board
+          </Link>
           <Link
             href={`/u/${encodeURIComponent(session.name)}`}
             onClick={() => setMenuOpen(false)}

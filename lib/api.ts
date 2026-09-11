@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import type { Competition, FeedItem, Match, MatchResult, ProfileCard, ProfileLink, Session, User } from './types'
+import type { BoardPost, Competition, FeedItem, Match, MatchResult, ProfileCard, ProfileLink, Session, User } from './types'
 
 function unwrap<T>({ data, error }: { data: T | null; error: { message: string } | null }): T {
   if (error) throw new Error(error.message)
@@ -222,4 +222,43 @@ export async function getFollowingIds(token: string): Promise<string[]> {
   const { data, error } = await supabase.rpc('get_following_ids', { p_token: token })
   if (error) throw new Error(error.message)
   return (data as string[]) ?? []
+}
+
+// --- Discussion board ---
+
+export async function listBoardPosts(): Promise<BoardPost[]> {
+  return unwrap(await supabase.from('board_feed').select('*').order('created_at', { ascending: true }))
+}
+
+export type BoardPostInput = { content: string; image: string | null; parentId?: string | null }
+
+export async function createBoardPost(token: string, input: BoardPostInput): Promise<BoardPost> {
+  const { data, error } = await supabase.rpc('create_board_post', {
+    p_token: token,
+    p_content: input.content,
+    p_image: input.image,
+    p_parent_id: input.parentId ?? null,
+  })
+  if (error) throw new Error(error.message)
+  return data
+}
+
+export async function updateBoardPost(
+  token: string,
+  id: string,
+  input: { content: string; image: string | null }
+): Promise<BoardPost> {
+  const { data, error } = await supabase.rpc('update_board_post', {
+    p_token: token,
+    p_id: id,
+    p_content: input.content,
+    p_image: input.image,
+  })
+  if (error) throw new Error(error.message)
+  return data
+}
+
+export async function deleteBoardPost(token: string, id: string): Promise<void> {
+  const { error } = await supabase.rpc('delete_board_post', { p_token: token, p_id: id })
+  if (error) throw new Error(error.message)
 }
