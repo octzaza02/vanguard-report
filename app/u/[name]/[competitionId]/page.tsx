@@ -14,6 +14,7 @@ import {
 } from '@/lib/api'
 import type { Competition, Match } from '@/lib/types'
 import { useSession } from '@/lib/session'
+import { MATCH_VIDEO_KEY, deleteMatchVideo } from '@/lib/video'
 import StatsSummary from '@/components/StatsSummary'
 import StatsCharts from '@/components/StatsCharts'
 import MatchTable from '@/components/MatchTable'
@@ -115,6 +116,8 @@ export default function CompetitionPage({
     if (!confirm('ลบแมตช์นี้?')) return
     try {
       await deleteMatch(session.token, m.id)
+      const video = m.extra?.[MATCH_VIDEO_KEY]
+      if (video) deleteMatchVideo(session.token, video).catch(() => {})
       await reload()
     } catch (err) {
       alert(err instanceof Error ? err.message : 'ลบไม่สำเร็จ')
@@ -282,6 +285,7 @@ export default function CompetitionPage({
               : 1
           }
           category={competition?.category ?? undefined}
+          token={session?.token}
           onSubmit={handleCreateMatch}
           onClose={() => setShowForm(false)}
         />
@@ -290,6 +294,7 @@ export default function CompetitionPage({
         <MatchForm
           initial={editing}
           category={competition?.category ?? undefined}
+          token={session?.token}
           onSubmit={handleUpdateMatch}
           onClose={() => setEditing(null)}
         />

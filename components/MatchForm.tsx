@@ -2,6 +2,8 @@
 
 import { Fragment, useState, type FormEvent } from 'react'
 import Modal from './Modal'
+import MatchVideoField, { type VideoDraft } from './MatchVideoField'
+import { MATCH_VIDEO_KEY, deleteMatchVideo, uploadMatchVideo } from '@/lib/video'
 import type { Match, MatchResult } from '@/lib/types'
 import type { MatchInput } from '@/lib/api'
 
@@ -29,12 +31,14 @@ export default function MatchForm({
   initial,
   nextRoundNumber,
   category,
+  token,
   onSubmit,
   onClose,
 }: {
   initial?: Match
   nextRoundNumber?: number
   category?: string
+  token?: string
   onSubmit: (input: MatchInput) => Promise<void>
   onClose: () => void
 }) {
@@ -114,11 +118,15 @@ export default function MatchForm({
             if (key.startsWith('บันทึกการเล่น::')) return false
             if (PRACTICE_DYN_SECTIONS.some((sec) => key.startsWith(`${sec}::`))) return false
             if (key === 'WinLoseSummary' || key === 'NextStrategy') return false
+            if (key === MATCH_VIDEO_KEY) return false
             return true
           })
           .map(([key, value]) => ({ key, value: String(value) }))
       : []
   )
+  const initialVideo = initial?.extra?.[MATCH_VIDEO_KEY] ?? ''
+  const [video, setVideo] = useState<VideoDraft>({ kind: 'saved', url: initialVideo })
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
@@ -174,7 +182,15 @@ export default function MatchForm({
     e.preventDefault()
     setError(null)
     setSaving(true)
+    let uploadedUrl: string | null = null
     try {
+      let videoUrl = video.kind === 'file' ? '' : video.url.trim()
+      if (video.kind === 'file') {
+        if (!token) throw new Error('กรุณาเข้าสู่ระบบก่อนอัปโหลดวิดีโอ')
+        setUploadProgress(0)
+        uploadedUrl = await uploadMatchVideo(token, video.file, setUploadProgress)
+        videoUrl = uploadedUrl
+      }
       const extra: Record<string, string> = {}
       for (const k of RESOURCE_FIELDS) {
         const v = resourceValues[k]
@@ -204,6 +220,7 @@ export default function MatchForm({
       for (const f of extraFields) {
         if (f.key.trim()) extra[f.key.trim()] = f.value
       }
+      if (videoUrl) extra[MATCH_VIDEO_KEY] = videoUrl
       const trimmedRound = roundNumber.trim()
       const parsedRound = trimmedRound ? parseInt(trimmedRound, 10) : null
       await onSubmit({
@@ -216,11 +233,17 @@ export default function MatchForm({
         notes,
         extra,
       })
+      // The old uploaded file is no longer referenced once the match is saved.
+      if (token && initialVideo && initialVideo !== videoUrl) {
+        deleteMatchVideo(token, initialVideo).catch(() => {})
+      }
       onClose()
     } catch (err) {
+      if (token && uploadedUrl) deleteMatchVideo(token, uploadedUrl).catch(() => {})
       setError(err instanceof Error ? err.message : 'บันทึกไม่สำเร็จ')
     } finally {
       setSaving(false)
+      setUploadProgress(null)
     }
   }
 
@@ -335,6 +358,8 @@ export default function MatchForm({
             placeholder="เช่น 2-1, 13-7"
           />
         </div>
+
+        <MatchVideoField value={video} onChange={setVideo} disabled={saving} />
 
         <>
             <div className="rounded-lg border border-amber-200 bg-amber-50/60 px-4 py-3 space-y-3">
@@ -583,7 +608,11 @@ export default function MatchForm({
             disabled={saving}
             className="px-4 py-2 rounded-md bg-amber-600 text-white hover:bg-amber-500 disabled:opacity-50"
           >
-            {saving ? 'กำลังบันทึก...' : 'บันทึก'}
+            {uploadProgress != null
+              ? `กำลังอัปโหลดวิดีโอ ${Math.round(uploadProgress * 100)}%`
+              : saving
+                ? 'กำลังบันทึก...'
+                : 'บันทึก'}
           </button>
         </div>
       </form>

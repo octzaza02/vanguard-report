@@ -2,6 +2,8 @@
 
 import { Fragment, useMemo, useState } from 'react'
 import type { Match, MatchResult } from '@/lib/types'
+import { MATCH_VIDEO_KEY } from '@/lib/video'
+import MatchVideoPlayer from './MatchVideoPlayer'
 
 const RESULT_LABELS: Record<MatchResult, string> = { win: 'ชนะ', loss: 'แพ้', draw: 'เสมอ' }
 
@@ -103,6 +105,16 @@ export default function MatchTable({
   const [resultFilter, setResultFilter] = useState<MatchResult | 'all'>('all')
   const [sortKey, setSortKey] = useState<SortKey>('round_number')
   const [sortAsc, setSortAsc] = useState(true)
+  const [openVideos, setOpenVideos] = useState<Set<string>>(new Set())
+
+  function toggleVideo(id: string) {
+    setOpenVideos((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
   const filtered = useMemo(() => {
     let rows = matches
     if (resultFilter !== 'all') rows = rows.filter((m) => m.result === resultFilter)
@@ -131,6 +143,7 @@ export default function MatchTable({
         // exclude practice section keys and summary fields — shown in expanded bullet row instead
         if (PRACTICE_SECTIONS.some((sec) => k.startsWith(`${sec}::`))) return
         if (k === 'WinLoseSummary' || k === 'NextStrategy') return
+        if (k === MATCH_VIDEO_KEY) return
         keys.add(k)
       })
     }
@@ -186,7 +199,10 @@ export default function MatchTable({
           <tbody>
             {filtered.map((m) => {
               const practiceData = getPracticeData(m)
-              const hasPractice = practiceData.length > 0 || !!m.extra?.['WinLoseSummary'] || !!m.extra?.['NextStrategy']
+              const video = m.extra?.[MATCH_VIDEO_KEY] || ''
+              const videoOpen = openVideos.has(m.id)
+              const hasPractice =
+                practiceData.length > 0 || !!m.extra?.['WinLoseSummary'] || !!m.extra?.['NextStrategy'] || !!video
               const colSpan = 7 + extraKeys.length + (isOwner ? 1 : 0)
               return (
                 <Fragment key={m.id}>
@@ -206,7 +222,19 @@ export default function MatchTable({
                         {RESULT_LABELS[m.result]}
                       </span>
                     </td>
-                    <td className="px-4 py-2 text-amber-900">{m.score || '—'}</td>
+                    <td className="px-4 py-2 text-amber-900">
+                      {m.score || '—'}
+                      {video && (
+                        <button
+                          type="button"
+                          onClick={() => toggleVideo(m.id)}
+                          title={videoOpen ? 'ซ่อนวิดีโอ' : 'ดูวิดีโอ'}
+                          className="ml-2 rounded px-1 hover:bg-amber-100"
+                        >
+                          🎬
+                        </button>
+                      )}
+                    </td>
                     <td className="px-4 py-2 text-amber-600 max-w-xs whitespace-pre-wrap break-words align-top">
                       {m.notes || '—'}
                     </td>
@@ -227,7 +255,25 @@ export default function MatchTable({
                   {hasPractice && (
                     <tr key={`${m.id}-detail`} className="border-b border-amber-200 bg-amber-50/60">
                       <td colSpan={colSpan} className="px-6 py-3 space-y-3">
+                        {video && (
+                          <div className="space-y-2">
+                            <button
+                              type="button"
+                              onClick={() => toggleVideo(m.id)}
+                              className="rounded-md border border-amber-300 bg-white px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-50 transition"
+                            >
+                              {videoOpen ? '▲ ซ่อนวิดีโอ' : '🎬 ดูวิดีโอแมตช์'}
+                            </button>
+                            {videoOpen && (
+                              <div className="max-w-2xl">
+                                <MatchVideoPlayer url={video} />
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        {practiceData.length > 0 && (
                         <p className="text-xs font-semibold text-amber-600 uppercase tracking-wide">ข้อมูลการ Practise</p>
+                        )}
                         <div className="grid grid-cols-2 gap-x-8 gap-y-2 sm:grid-cols-3">
                           {practiceData.map((section) => (
                             <div key={section.sec}>
