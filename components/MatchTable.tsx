@@ -217,13 +217,10 @@ export default function MatchTable({
                     <td className="px-4 py-2 text-amber-900">
                       {m.went_first === true ? 'เริ่มก่อน' : m.went_first === false ? 'เริ่มหลัง' : '—'}
                     </td>
-                    <td className="px-4 py-2">
+                    <td className="px-4 py-2 whitespace-nowrap">
                       <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${RESULT_BADGE[m.result]}`}>
                         {RESULT_LABELS[m.result]}
                       </span>
-                    </td>
-                    <td className="px-4 py-2 text-amber-900">
-                      {m.score || '—'}
                       {video && (
                         <button
                           type="button"
@@ -235,6 +232,7 @@ export default function MatchTable({
                         </button>
                       )}
                     </td>
+                    <td className="px-4 py-2 text-amber-900">{m.score || '—'}</td>
                     <td className="px-4 py-2 text-amber-600 max-w-xs whitespace-pre-wrap break-words align-top">
                       {m.notes || '—'}
                     </td>
