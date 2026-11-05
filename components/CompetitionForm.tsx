@@ -5,6 +5,7 @@ import Modal from './Modal'
 import type { Competition } from '@/lib/types'
 import type { CompetitionInput } from '@/lib/api'
 import { resizeToDataUrl } from '@/lib/image'
+import GroupPicker from './GroupPicker'
 
 const MAX_DECKLOG_DIM = 480
 
@@ -78,6 +79,7 @@ export default function CompetitionForm({
 }) {
   const [name, setName] = useState(initial?.name ?? '')
   const [category, setCategory] = useState(initial?.category ?? '')
+  const [folderGroup, setFolderGroup] = useState(initial?.folder_group ?? '')
   const [decklog, setDecklog] = useState(initial?.decklog ?? '')
 
   const [attachments, setAttachments] = useState<AttachmentDraft[]>(() => {
@@ -122,7 +124,7 @@ export default function CompetitionForm({
       await onSubmit({
         name: name.trim(), game: '', category, decklog,
         decklogImage: first.image, notes: first.note,
-        attachments,
+        attachments, folderGroup: folderGroup.trim(),
       })
       onClose()
     } catch (err) {
@@ -163,6 +165,11 @@ export default function CompetitionForm({
               </button>
             ))}
           </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-amber-900 mb-2">หมวดหมู่ในโฟลเดอร์</label>
+          <GroupPicker value={folderGroup} onChange={setFolderGroup} />
         </div>
 
         <div>

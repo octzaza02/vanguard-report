@@ -94,6 +94,61 @@ export default function UserFolderPage({ params }: { params: Promise<{ name: str
     }
   }
 
+  const groupOptions = competitions
+    ? [...new Set(competitions.map((c) => c.folder_group).filter((g): g is string => !!g))]
+    : []
+  // Groups keep the order of their newest competition; ungrouped goes last.
+  const groups = competitions && competitions.length > 0
+    ? [
+        ...groupOptions.map((name) => ({ name: name as string | null, items: competitions.filter((c) => c.folder_group === name) })),
+        { name: null as string | null, items: competitions.filter((c) => !c.folder_group) },
+      ].filter((g) => g.items.length > 0)
+    : null
+
+  function renderCard(c: Competition) {
+    return (
+      <div
+        key={c.id}
+        className="rounded-xl border border-amber-200 bg-white p-5 shadow-sm hover:shadow-md hover:border-amber-400 transition"
+      >
+        <Link href={`/u/${encodeURIComponent(decodedName)}/${c.id}`} className="flex gap-3">
+          {c.decklog_image && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={c.decklog_image}
+              alt="Decklog"
+              className="h-14 w-14 rounded-md border border-amber-200 object-cover shrink-0"
+            />
+          )}
+          <div className="min-w-0">
+            <p className="font-medium text-amber-950">{c.name}</p>
+            <p className="text-sm text-amber-600 mt-1">
+              {[c.game, c.category].filter(Boolean).join(' · ') || 'ไม่ระบุเกม/ประเภท'}
+            </p>
+            {c.decklog && <p className="text-xs text-amber-500 mt-1 truncate">Decklog: {c.decklog}</p>}
+          </div>
+        </Link>
+        <div className="mt-3 flex items-center justify-between">
+          {isOwner ? (
+            <div className="flex gap-3 text-xs">
+              <button onClick={() => setEditing(c)} className="text-amber-700 hover:underline">
+                แก้ไข
+              </button>
+              <button onClick={() => handleDelete(c.id)} className="text-red-600 hover:underline">
+                ลบ
+              </button>
+            </div>
+          ) : (
+            <span />
+          )}
+          <p className="text-xs text-amber-400">
+            {new Date(c.created_at).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })}
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   if (user === null) {
     return (
       <div className="text-center text-amber-600 py-16">
@@ -158,51 +213,20 @@ export default function UserFolderPage({ params }: { params: Promise<{ name: str
         </div>
       )}
 
-      {competitions && competitions.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {competitions.map((c) => (
-            <div
-              key={c.id}
-              className="rounded-xl border border-amber-200 bg-white p-5 shadow-sm hover:shadow-md hover:border-amber-400 transition"
-            >
-              <Link href={`/u/${encodeURIComponent(decodedName)}/${c.id}`} className="flex gap-3">
-                {c.decklog_image && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={c.decklog_image}
-                    alt="Decklog"
-                    className="h-14 w-14 rounded-md border border-amber-200 object-cover shrink-0"
-                  />
-                )}
-                <div className="min-w-0">
-                  <p className="font-medium text-amber-950">{c.name}</p>
-                  <p className="text-sm text-amber-600 mt-1">
-                    {[c.game, c.category].filter(Boolean).join(' · ') || 'ไม่ระบุเกม/ประเภท'}
-                  </p>
-                  {c.decklog && <p className="text-xs text-amber-500 mt-1 truncate">Decklog: {c.decklog}</p>}
-                </div>
-              </Link>
-              <div className="mt-3 flex items-center justify-between">
-                {isOwner ? (
-                  <div className="flex gap-3 text-xs">
-                    <button onClick={() => setEditing(c)} className="text-amber-700 hover:underline">
-                      แก้ไข
-                    </button>
-                    <button onClick={() => handleDelete(c.id)} className="text-red-600 hover:underline">
-                      ลบ
-                    </button>
-                  </div>
-                ) : (
-                  <span />
-                )}
-                <p className="text-xs text-amber-400">
-                  {new Date(c.created_at).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })}
-                </p>
-              </div>
+      {groups && groups.map((g) => (
+        <section key={g.name ?? '__none'} className="mb-8">
+          {(groups.length > 1 || g.name) && (
+            <div className="mb-3 flex items-center gap-2 border-b border-amber-200 pb-2">
+              <span className="text-amber-500">📁</span>
+              <h2 className="font-semibold text-amber-900">{g.name ?? 'ไม่มีหมวดหมู่'}</h2>
+              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-700">{g.items.length}</span>
             </div>
-          ))}
-        </div>
-      )}
+          )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {g.items.map(renderCard)}
+          </div>
+        </section>
+      ))}
 
       {showForm && (
         <CompetitionForm onSubmit={handleCreate} onClose={() => setShowForm(false)} />

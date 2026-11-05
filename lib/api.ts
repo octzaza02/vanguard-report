@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import type { BoardPost, Competition, FeedItem, Match, MatchResult, ProfileCard, ProfileLink, Session, User } from './types'
+import type { BoardPost, Competition, FeedItem, FolderGroup, Match, MatchResult, ProfileCard, ProfileLink, Session, User } from './types'
 
 function unwrap<T>({ data, error }: { data: T | null; error: { message: string } | null }): T {
   if (error) throw new Error(error.message)
@@ -106,6 +106,7 @@ export type CompetitionInput = {
   decklogImage: string | null
   notes: string
   attachments: { image: string | null; note: string }[]
+  folderGroup: string
 }
 
 export async function createCompetition(token: string, fields: CompetitionInput): Promise<Competition> {
@@ -118,6 +119,7 @@ export async function createCompetition(token: string, fields: CompetitionInput)
     p_decklog_image: fields.decklogImage,
     p_notes: fields.notes,
     p_attachments: fields.attachments,
+    p_folder_group: fields.folderGroup,
   })
   if (error) throw new Error(error.message)
   return data
@@ -134,6 +136,7 @@ export async function updateCompetition(token: string, id: string, fields: Compe
     p_decklog_image: fields.decklogImage,
     p_notes: fields.notes,
     p_attachments: fields.attachments,
+    p_folder_group: fields.folderGroup,
   })
   if (error) throw new Error(error.message)
   return data
@@ -260,5 +263,24 @@ export async function updateBoardPost(
 
 export async function deleteBoardPost(token: string, id: string): Promise<void> {
   const { error } = await supabase.rpc('delete_board_post', { p_token: token, p_id: id })
+  if (error) throw new Error(error.message)
+}
+
+// --- Folder groups (saved per user for reuse) ---
+
+export async function listFolderGroups(userId: string): Promise<FolderGroup[]> {
+  return unwrap(
+    await supabase.from('folder_groups').select('*').eq('user_id', userId).order('created_at', { ascending: true })
+  )
+}
+
+export async function addFolderGroup(token: string, name: string): Promise<FolderGroup> {
+  const { data, error } = await supabase.rpc('add_folder_group', { p_token: token, p_name: name })
+  if (error) throw new Error(error.message)
+  return data
+}
+
+export async function deleteFolderGroup(token: string, id: string): Promise<void> {
+  const { error } = await supabase.rpc('delete_folder_group', { p_token: token, p_id: id })
   if (error) throw new Error(error.message)
 }

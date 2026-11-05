@@ -22,6 +22,7 @@ export type Competition = {
   name: string
   game: string | null
   category: string | null
+  folder_group: string | null
   decklog: string | null
   decklog_image: string | null
   notes: string | null
@@ -89,4 +90,11 @@ export type BoardPost = {
   edited: boolean
   author_name: string
   author_avatar: string | null
+}
+
+export type FolderGroup = {
+  id: string
+  user_id: string
+  name: string
+  created_at: string
 }
